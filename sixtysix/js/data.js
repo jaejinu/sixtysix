@@ -28,18 +28,25 @@ const HABITS = [
 ];
 
 /* ── 코호트 ──────────────────────────────────────────── */
+/* 진행 중 코호트는 습관마다 하나씩 둔다.
+   온보딩에서 고른 습관과 배정 코호트가 어긋나지 않게 하기 위한 것이다. */
 const MY_COHORT_ID = 'c-reading-0817';
 
 const COHORTS = [
-  { id: MY_COHORT_ID, habitId: 'reading', name: '독서 15분 · 9월 2기', start: '2026-08-17', end: '2026-10-21', capacity: 30, joined: 30, mine: true,  sample: true },
+  { id: MY_COHORT_ID,     habitId: 'reading', name: '독서 15분 · 9월 2기',     start: '2026-08-17', end: '2026-10-21', capacity: 30, joined: 30, running: true, sample: true },
+  { id: 'c-running-0817', habitId: 'running', name: '아침 러닝 · 9월 2기',     start: '2026-08-17', end: '2026-10-21', capacity: 30, joined: 30, running: true, sample: true },
+  { id: 'c-english-0817', habitId: 'english', name: '영어 단어 20개 · 9월 2기',     start: '2026-08-17', end: '2026-10-21', capacity: 30, joined: 30, running: true, sample: true },
+  { id: 'c-water-0817',   habitId: 'water',   name: '물 2L · 9월 2기',         start: '2026-08-17', end: '2026-10-21', capacity: 30, joined: 30, running: true, sample: true },
+  { id: 'c-journal-0817', habitId: 'journal', name: '하루 기록 · 9월 2기',     start: '2026-08-17', end: '2026-10-21', capacity: 30, joined: 30, running: true, sample: true },
+  { id: 'c-stretch-0817', habitId: 'stretch', name: '아침 스트레칭 · 9월 2기', start: '2026-08-17', end: '2026-10-21', capacity: 30, joined: 30, running: true, sample: true },
   { id: 'c-running-0914', habitId: 'running', name: '아침 러닝 · 9월 3기',      start: '2026-09-14', end: '2026-11-18', capacity: 30, joined: 12, sample: true },
-  { id: 'c-english-0914', habitId: 'english', name: '영어 단어 · 9월 3기',      start: '2026-09-14', end: '2026-11-18', capacity: 30, joined: 27, sample: true },
+  { id: 'c-english-0914', habitId: 'english', name: '영어 단어 20개 · 9월 3기',      start: '2026-09-14', end: '2026-11-18', capacity: 30, joined: 27, sample: true },
   { id: 'c-water-1005',   habitId: 'water',   name: '물 2L · 10월 1기',         start: '2026-10-05', end: '2026-12-09', capacity: 30, joined: 3,  sample: true },
   { id: 'c-journal-1005', habitId: 'journal', name: '하루 기록 · 10월 1기',     start: '2026-10-05', end: '2026-12-09', capacity: 30, joined: 0,  sample: true },
   { id: 'c-reading-0914', habitId: 'reading', name: '독서 15분 · 9월 3기',      start: '2026-09-14', end: '2026-11-18', capacity: 30, joined: 21, sample: true },
   { id: 'c-stretch-0914', habitId: 'stretch', name: '아침 스트레칭 · 9월 3기',  start: '2026-09-14', end: '2026-11-18', capacity: 30, joined: 8,  sample: true },
   { id: 'c-running-1005', habitId: 'running', name: '아침 러닝 · 10월 1기',     start: '2026-10-05', end: '2026-12-09', capacity: 30, joined: 30, sample: true },
-  { id: 'c-english-1005', habitId: 'english', name: '영어 단어 · 10월 1기',     start: '2026-10-05', end: '2026-12-09', capacity: 30, joined: 5,  sample: true },
+  { id: 'c-english-1005', habitId: 'english', name: '영어 단어 20개 · 10월 1기',     start: '2026-10-05', end: '2026-12-09', capacity: 30, joined: 5,  sample: true },
   { id: 'c-stretch-1005', habitId: 'stretch', name: '아침 스트레칭 · 10월 1기', start: '2026-10-05', end: '2026-12-09', capacity: 30, joined: 2,  sample: true },
   { id: 'c-journal-1102', habitId: 'journal', name: '하루 기록 · 11월 1기',     start: '2026-11-02', end: '2027-01-06', capacity: 30, joined: 1,  sample: true },
   { id: 'c-reading-1102', habitId: 'reading', name: '독서 15분 · 11월 1기',     start: '2026-11-02', end: '2027-01-06', capacity: 30, joined: 4,  sample: true }

@@ -152,11 +152,12 @@ function screenOnboarding() {
   } else if (step === 2) {
     mediaKey = 'meetup';
     const h = habitById(habitId || 'reading');
+    const assigned = runningCohortFor(h.id);
     eyebrow = '코호트 배정';
-    title = h.name + ' · 9월 2기에 들어왔어요';
+    title = assigned.name + '에 들어왔어요';
     desc = '같은 날 시작한 30명이 함께 66일을 갑니다. 인증 마감은 다음 날 새벽 4시예요.';
     content = '<div class="cohort-summary">' +
-      '<p class="cohort-summary__name">' + esc(h.name) + ' · 9월 2기</p>' +
+      '<p class="cohort-summary__name">' + esc(assigned.name) + '</p>' +
       '<p class="cohort-summary__meta">8월 17일 시작 · 10월 21일 종료 · 30/30명</p>' +
       '<div class="cohort-summary__avatars">' +
         MEMBERS.map(function (m) { return media(m.avatar, { alt: '', w: 36, h: 36 }); }).join('') +
@@ -346,7 +347,10 @@ const DISCOVER_SORTS = [
 
 function filteredCohorts() {
   const f = Store.settings.discover;
-  let list = COHORTS.slice();
+  // 이미 시작한 코호트는 참여할 수 없다. 내 코호트만 남긴다.
+  let list = COHORTS.filter(function (c) {
+    return !c.running || c.id === Store.me.cohortId;
+  });
 
   if (f.habit !== 'all') list = list.filter(function (c) { return c.habitId === f.habit; });
 
@@ -433,11 +437,20 @@ function screenChallenge(id) {
   else if (dd > 0) badges.push('<span class="badge badge--return">' + icon('fa-clock') + '모집 중 · D-' + dd + '</span>');
   if (full) badges.push('<span class="badge">' + icon('fa-user-group') + '정원 마감</span>');
 
+  const isMine = cohort.id === Store.me.cohortId;
+  const isReserved = cohort.id === Store.me.nextCohortId;
   let cta;
-  if (cohort.mine) {
+  if (isMine) {
     cta = [button('내 코호트예요', { disabled: true }), button('오늘 인증 남기기', { variant: 'primary', action: 'go-checkin' })];
+  } else if (cohort.running) {
+    cta = [button('이미 시작한 코호트예요', { disabled: true }), button('비슷한 코호트 보기', { variant: 'secondary', href: '#/discover' })];
   } else if (full) {
     cta = [button('정원이 찼어요', { disabled: true }), button('비슷한 코호트 보기', { variant: 'secondary', href: '#/discover' })];
+  } else if (isReserved) {
+    cta = [button('예약했어요', { disabled: true }), button('예약 취소하기', { variant: 'secondary', action: 'cancel-reserve' })];
+  } else if (hasRunningCohort()) {
+    // 정책 7: 한 번에 한 코호트. 진행 중이면 다음 코호트로 예약한다.
+    cta = [button('다음 코호트로 예약하기', { action: 'join-cohort', id: cohort.id, icon: 'fa-calendar-plus' })];
   } else {
     cta = [button('코호트 참여하기', { action: 'join-cohort', id: cohort.id, icon: 'fa-user-plus' })];
   }
@@ -832,7 +845,9 @@ function screenMy() {
     '<section style="margin-top:27px"><div class="profile-head">' +
       media('reading', { alt: '', w: 64, h: 64 }) +
       '<div><p class="profile-head__name">' + esc(me.nickname) + '</p>' +
-      '<p class="profile-head__meta">' + esc(habit.name) + ' · ' + esc(cohort.name) + '<br>2026년 8월 17일 시작</p></div>' +
+      // 코호트명에 이미 습관명이 들어 있으므로 겹쳐 쓰지 않는다
+      '<p class="profile-head__meta">' + esc(cohort.name) + '<br>' + esc(habit.goal) +
+        ' · ' + esc(formatFullDate(new Date(cohort.start + 'T00:00:00'))) + ' 시작</p></div>' +
     '</div></section>' +
 
     '<section class="section--tight"><div class="profile-stats">' +
@@ -917,13 +932,14 @@ function screenRanking() {
 
     '<section class="section--tight"><div class="note-card">' +
       '<h2 class="note-card__title">' + pace + '명이 완주 페이스예요</h2>' +
-      '<p class="note-card__body">평균 인증 ' + avg + '일 · 내 인증 ' + d.filled + '일. ' +
-        '순위는 총 인증 일수로 매겨요. 같으면 연속 기록이 앞섭니다.</p>' +
+      '<p class="note-card__body">평균 인증 ' + avg + '일 · 내 인증 ' + d.checkins + '일. ' +
+        '순위는 실제 인증 일수로 매겨요. 같으면 연속 기록이 앞섭니다. ' +
+        '면제권을 쓴 날은 연속 기록만 이어지고 인증 수에는 들어가지 않아요.</p>' +
     '</div></section>' +
 
     '<section class="section--tight"><div class="note-card" style="border-left-color:var(--color-accent)">' +
       '<h2 class="note-card__title">내 위치</h2>' +
-      '<p class="note-card__body">' + d.filled + '일 인증 · ' + meRow.rank + '위 · 완주까지 ' + d.remaining + '일</p>' +
+      '<p class="note-card__body">' + d.checkins + '일 인증 · ' + meRow.rank + '위 · 완주까지 ' + d.remaining + '일</p>' +
     '</div></section>' +
 
     '<section class="section--tight">' + sectionHeader('코호트 순위') +
@@ -1142,7 +1158,10 @@ const ACTIONS = {
   },
   'onboard-next': function () {
     if (View.onboardStep === 1) {
-      Store.me.habitId = View.onboardHabit || 'reading';
+      const habitId = View.onboardHabit || 'reading';
+      Store.me.habitId = habitId;
+      // 고른 습관의 진행 중 코호트를 함께 배정한다. 둘이 어긋나면 안 된다.
+      Store.me.cohortId = runningCohortFor(habitId).id;
       View.onboardStep = 2;
       render();
     } else if (View.onboardStep === 2) {
@@ -1158,6 +1177,7 @@ const ACTIONS = {
   'onboard-skip': function () {
     Store.me.onboarded = true;
     Store.me.habitId = Store.me.habitId || 'reading';
+    Store.me.cohortId = runningCohortFor(Store.me.habitId).id;
     saveStore();
     View.onboardStep = 1;
     go('#/home');
@@ -1301,10 +1321,13 @@ const ACTIONS = {
     const cohort = cohortById(el.dataset.id);
     const start = new Date(cohort.start + 'T00:00:00');
     const end = new Date(cohort.end + 'T00:00:00');
+    const reserving = hasRunningCohort();
     confirmModal({
-      title: '이 코호트로 66일을 시작할까요?',
-      desc: formatFullDate(start) + '에 시작해서 ' + formatFullDate(end) + '에 끝나요. 시작하면 코호트는 바꿀 수 없어요.',
-      primary: { label: '참여하기', action: 'confirm-join' },
+      title: reserving ? '다음 코호트로 예약할까요?' : '이 코호트로 66일을 시작할까요?',
+      desc: reserving
+        ? '지금 코호트를 끝낸 뒤 ' + formatFullDate(start) + '에 시작해요. 한 번에 하나의 코호트만 진행할 수 있어요.'
+        : formatFullDate(start) + '에 시작해서 ' + formatFullDate(end) + '에 끝나요. 시작하면 코호트는 바꿀 수 없어요.',
+      primary: { label: reserving ? '예약하기' : '참여하기', action: 'confirm-join' },
       secondary: { label: '조금 더 볼게요', action: 'close-overlay' }
     });
     View.joinTarget = cohort.id;
@@ -1312,7 +1335,31 @@ const ACTIONS = {
   'confirm-join': function () {
     const cohort = cohortById(View.joinTarget);
     closeOverlay();
+    if (hasRunningCohort()) {
+      Store.me.nextCohortId = cohort.id;
+      saveStore();
+      render();
+      toast(cohort.name + objectParticle(cohort.name) + ' 다음 코호트로 예약했어요.');
+      return;
+    }
+    // 진행 중인 코호트가 없을 때만 실제로 배정한다.
+    Store.me.cohortId = cohort.id;
+    Store.me.habitId = cohort.habitId;
+    Store.me.joinedAt = isoDate(new Date(DEMO_TODAY + 'T00:00:00'));
+    Store.me.graduated = false;
+    Store.me.nextCohortId = null;
+    Store.me.dayCount = 1;
+    Store.me.passesUsed = 0;
+    Store.days = {};
+    saveStore();
+    render();
     toast(cohort.name + '에 참여했어요. 시작일에 첫 인증을 남기면 돼요.');
+  },
+  'cancel-reserve': function () {
+    Store.me.nextCohortId = null;
+    saveStore();
+    render();
+    toast('예약을 취소했어요.');
   },
 
   /* 공지 */
@@ -1393,7 +1440,8 @@ const ACTIONS = {
     const c = cohortById(el.dataset.id);
     Store.me.nextCohortId = c.id;
     saveStore();
-    toast(c.name + '를 예약했어요.');
+    render();
+    toast(c.name + objectParticle(c.name) + ' 다음 코호트로 예약했어요.');
   }
 };
 

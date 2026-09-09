@@ -312,7 +312,9 @@ function ranking() {
   });
   rows.push({
     id: 'me', name: Store.me.nickname, avatar: 'reading',
-    total: d.filled, streak: d.streak, state: d.state, me: true
+    // 정책 4: 순위는 실제 인증 일수 기준. 면제권은 연속 기록만 지키고 인증 수에는 넣지 않는다.
+    // 다른 멤버의 total 도 순수 인증 수이므로 같은 기준으로 맞춘다.
+    total: d.checkins, streak: d.streak, state: d.state, me: true
   });
   rows.sort(function (a, b) {
     if (b.total !== a.total) return b.total - a.total;
@@ -374,12 +376,31 @@ function daysUntil(isoStr) {
   return Math.round((target - today) / 86400000);
 }
 
+/** 앞 글자의 받침 유무에 따라 목적격 조사를 고른다. 코호트명이 바뀌어도 문장이 어색해지지 않는다. */
+function objectParticle(word) {
+  const last = String(word || '').trim().slice(-1);
+  const code = last.charCodeAt(0);
+  if (code < 0xac00 || code > 0xd7a3) return '를';
+  return (code - 0xac00) % 28 === 0 ? '를' : '을';
+}
+
 function habitById(id) {
   return HABITS.filter(function (h) { return h.id === id; })[0] || HABITS[0];
 }
 
 function cohortById(id) {
   return COHORTS.filter(function (c) { return c.id === id; })[0] || COHORTS[0];
+}
+
+/** 습관에 해당하는 진행 중 코호트를 찾는다. 온보딩 배정에 사용한다. */
+function runningCohortFor(habitId) {
+  const c = COHORTS.filter(function (x) { return x.running && x.habitId === habitId; })[0];
+  return c || cohortById(MY_COHORT_ID);
+}
+
+/** 내가 지금 코호트를 진행 중인가. 완주했거나 배정 전이면 false. */
+function hasRunningCohort() {
+  return !!Store.me.cohortId && !Store.me.graduated;
 }
 
 function memberById(id) {
