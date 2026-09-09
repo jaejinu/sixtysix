@@ -123,6 +123,47 @@ Checkin { id, memberId, cohortId, day, createdAt, effectiveDate,
 
 30명의 행동을 만든다. 각 멤버가 날짜별로 인증했는지, 늦었는지, 빠졌는지, 휴면인지, 복귀했는지, 누구를 응원했는지를 갖는다.
 
+**진행 상황 (2026-09-09)** — 1~3단계 완료, 4~5단계 진행 중
+
+```
+✅ 1. Random primitive 고정        valueFor() + seed 계약, 방화벽 16개
+✅ 2. 원형 파라미터 스키마 고정      ArchetypeParams 8개 축
+✅ 3. 6종 원형 수치 설정            steady·ordinary·deadline·hotStart·comeback·atRisk
+✅ 4. 경로 의존 상태 전이 구현       getAttendanceProbability + simulateMember
+🔜 5. 30명 구성과 66일 시뮬레이션
+🔜 6. 분포·궤적 검증 후 튜닝
+🔜 7. cohortMomentum 0 → 실험값으로 켜서 A/B
+```
+
+**순서가 중요했다.** 원형 숫자부터 잡으면 나중에 `valueFor()`의 분포나 seed 규칙을 바꿀 때
+"행동 파라미터가 잘못됐나, 랜덤 기반이 바뀌었나"를 구분할 수 없다.
+
+**세 층을 섞지 않는다.**
+
+```
+valueFor                 = 운
+getAttendanceProbability = 성향 + 과거
+simulateMember           = 둘을 결합
+```
+
+`simulateMember`는 판단이 아니라 **도메인 사실**(Checkin · PassUsage)을 출력한다.
+`late`·`simple`·`returning`은 여기서 정하지 않고 Gate 1 셀렉터가 `createdAt`과 이력에서 파생한다.
+이 구조 덕분에 시뮬레이터가 Gate 1의 불변식을 자동으로 통과해야 한다.
+
+**원형 1명씩 66일 궤적 (중간 완료 기준)**
+
+```
+steady    인증 55 · 늦은  3 · 간단  7 · 면제 2 · 최장연속 25 · 휴면 0 · 복귀  5
+ordinary  인증 41 · 늦은  6 · 간단  4 · 면제 1 · 최장연속  8 · 휴면 0 · 복귀 12
+deadline  인증 44 · 늦은 20 · 간단 17 · 면제 1 · 최장연속  9 · 휴면 0 · 복귀 13
+hotStart  인증 49 · 늦은  8 · 간단  6 · 면제 0 · 최장연속 14 · 휴면 0 · 복귀 12
+comeback  인증 30 · 늦은  3 · 간단  8 · 면제 1 · 최장연속  8 · 휴면 1 · 복귀 14
+atRisk    인증 22 · 늦은  6 · 간단  7 · 면제 0 · 최장연속  4 · 휴면 3 · 복귀  9
+```
+
+`deadline`은 출석이 나쁜 사람이 아니라 **막판에 나타나는 사람**이다(인증 44로 ordinary보다 높고 늦은 인증 20).
+`steady`도 인증 55로 완벽하지 않다. 각본이 아니라 성향이어야 하기 때문이다.
+
 **통과 기준** — 결정론.
 
 > 같은 seed와 같은 날짜면 항상 같은 결과가 나오는가?
