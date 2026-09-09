@@ -1,0 +1,14 @@
+{
+  "name": "sixtysix-qa",
+  "private": true,
+  "description": "육십육 모바일웹 MVP 회귀 테스트. 배포 대상 폴더(../sixtysix) 바깥에 두어 정적 배포에 영향을 주지 않는다.",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "report": "playwright show-report",
+    "update-snapshots": "playwright test --update-snapshots"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
+  }
+}
