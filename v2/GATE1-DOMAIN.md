@@ -47,7 +47,7 @@ V1에서 발견된 정합성 버그 3건은 전부 같은 뿌리였다.
 
 ### Cohort
 ```ts
-{ id, habitId, generation, startDate, endDate, capacity, memberIds }
+{ id, habitId, generation, startDate, durationDays: 66, capacity: 30, policyVersion, memberIds }
 ```
 - **`name`을 저장하지 않는다.** `habit.name + ' · ' + generation`으로 파생한다.
   V1에서 이름을 손으로 적다가 `영어 단어 · 9월 2기`만 규칙을 벗어났다.
@@ -65,17 +65,20 @@ V1에서 발견된 정합성 버그 3건은 전부 같은 뿌리였다.
 
 ### Membership — 누가 어느 코호트에 속하는가
 ```ts
-{ id, userId, cohortId, status: 'active' | 'reserved' | 'graduated' | 'left',
-  joinedAt, leftAt? }
+{ id, userId, cohortId, joinedAt }
 ```
 - **`habitId`를 저장하지 않는다.** `cohort.habitId`로 파생한다.
   V1 버그 1의 재발 방지책이다. 두 곳에 적으면 반드시 어긋난다.
-- `status: 'reserved'`가 V1.1의 `nextCohortId`를 대체한다. 예약도 하나의 Membership이다.
+- **`status`도 저장하지 않는다.** 앞선 논의에서 저장하기로 했다가 정정했다.
+  `reserved` · `active` · `graduated`는 `cohort.startDate` · `endDate`와 `now`에서 전부 파생된다.
+  정책 10이 "제거하지 않는다"이므로 `left` 상태와 `leftAt`은 필요 없다.
+- V1.1의 `nextCohortId`는 **`status === 'reserved'`로 파생되는 Membership**이 대체한다.
 - **`passesUsed`를 저장하지 않는다.** `PassUsage` 개수로 센다.
+- 불변 조건: **한 사용자에게 동시에 `active`인 Membership은 최대 하나다.** (정책 7)
 
 ### Checkin — 인증 하나
 ```ts
-{ id, membershipId, cohortDay: 1..66, createdAt, text, photoId?, scope: 'cohort' | 'private' }
+{ id, membershipId, cohortDay: 1..66, createdAt, text, photoRef?, visibility: 'cohort' | 'private' }
 ```
 
 **저장하지 않고 파생하는 것**
@@ -83,7 +86,7 @@ V1에서 발견된 정합성 버그 3건은 전부 같은 뿌리였다.
 | 항목 | 파생 방법 |
 |---|---|
 | `late` | `createdAt` vs 해당 일차의 마감(다음 날 04:00) |
-| `simple` | `photoId == null` |
+| `simple` | `photoRef == null` |
 | `returning` | 직전 일차들이 미인증인가 |
 | `memberId` | `membership.userId` |
 | `cohortId` | `membership.cohortId` |
@@ -91,10 +94,16 @@ V1에서 발견된 정합성 버그 3건은 전부 같은 뿌리였다.
 ChatGPT 초안의 `status: normal | late | return`은 **저장하지 않기를 제안한다.**
 셋 다 `createdAt`과 이력에서 계산되므로, 저장하면 규칙을 고쳤을 때 과거 데이터와 어긋난다.
 
-> **열린 질문**: `cohortDay`를 저장할 것인가 `createdAt`에서 파생할 것인가.
-> 파생하면 04:00 마감 규칙이 단일 진실이 되지만, 규칙을 바꾸면 과거 인증이 다른 날로 이동한다.
-> 저장하면 역사가 고정되지만 `createdAt`과 어긋날 수 있다.
-> **초안 제안: 저장한다.** 66칸 진행판이 역사 기록이므로 고정이 우선이다. 쓰기 시점에 규칙을 한 번 적용한다.
+> **확정: `cohortDay`는 저장한다.** "파생될 수 있는 값은 저장하지 않는다"의 예외다.
+> 단순 계산 결과가 아니라 **인증이 접수될 때 확정되는 업무상 귀속일**이기 때문이다.
+>
+> ```
+> createdAt = 2026-09-10T02:31:00+09:00   물리적으로 언제 제출했는가
+> cohortDay = 24                          66일 역사 중 어느 칸에 귀속됐는가
+> ```
+>
+> 함께 `Cohort.policyVersion`을 둔다. 나중에 04:00 규칙이 바뀌어도
+> **기존 코호트의 과거 판단을 새 규칙으로 재해석하지 않는다.**
 
 ### PassUsage — 면제권 사용
 ```ts
@@ -189,10 +198,52 @@ Gate 1이 끝났는지 판정하는 테스트다. **UI 없이** 통과해야 한
 
 ---
 
-## 7. 다음 논의거리
+## 7. 확정된 나머지 결정
 
-1. `cohortDay`를 저장할지 파생할지 (3장 열린 질문)
-2. 30명 멤버의 원형(archetype)을 몇 종류로 둘지, 각 원형의 행동 파라미터
-3. Reaction을 전부 생성할지(30명 × 66일이면 수천 건) 필요 시점에 계산할지
-4. Demo/Real 저장 영역 분리의 구체적 키 구조
-5. V1 테스트 210건 중 재사용 가능한 범위
+| 항목 | 결정 |
+|---|---|
+| `cohortDay` | **저장한다.** 업무상 귀속일이므로 예외. `Cohort.policyVersion` 병행 |
+| 멤버 원형 | **6종** — steady · deadline · comeback · atRisk · ordinary · hotStart. UI에 노출하지 않고 시뮬레이터 파라미터로만 존재 |
+| Reaction | **사용자 것만 저장, 시뮬레이션은 lazy projection.** 시차를 두어 뒤늦게 붙게 한다 |
+| 저장 키 | 세계 단위 물리 분리 — `sixtysix:v2:meta` · `:demo` · `:real`. UI는 `WorldRepository`만 통한다 |
+| V1 테스트 | 의도는 65~75% 재사용, 코드는 30~40%. 도메인 정합성은 Playwright에서 빼고 **Vitest 단위 테스트로 재작성** |
+
+### 저장 키 구조
+
+```
+sixtysix:v2:meta   { schemaVersion, activeWorld: 'demo'|'real', simulatorVersion }
+sixtysix:v2:demo   { clock: { currentAt }, membership, checkins, passUsages, reactions, preferences }
+sixtysix:v2:real   { membership, checkins, passUsages, reactions, preferences }
+```
+
+RealClock은 시스템 시각을 읽으므로 `currentAt`을 저장하지 않는다.
+DemoClock은 날짜를 넘겼다 돌아와도 위치를 유지해야 하므로 저장한다.
+
+### 원형 파라미터 예시
+
+```ts
+{ baseAttendance: 0.84, streakMomentum: 0.10, missDrag: 0.07,
+  comebackStrength: 0.18, fatigueSlope: 0.04, latePropensity: 0.08 }
+```
+
+출석 확률은 전날 true/false만 보지 않고 `previousStreak` · `consecutiveMisses` · `cohortDay` · `archetype`을 함께 받는다.
+
+```
+P(attendToday) = baseAttendance
+               + streakMomentum(previousStreak)
+               - missDrag(consecutiveMisses)
+               - fatigue(cohortDay)
+               + comebackPressure(consecutiveMisses)
+               + cohortMomentum(yesterdayCohortParticipation)   ← Gate 2 v1 에서는 계수 0
+               + deterministicNoise
+```
+
+**`cohortMomentum` 항이 가설 1 검증의 장치다.** 계수를 켜고 끌 수 있게 만들면
+"혼자 스트릭만 보는 버전"과 "코호트 움직임이 보이는 버전"을 같은 코드로 비교할 수 있다.
+Gate 2 첫 버전에서는 0으로 두고 개인 원형만으로 자연스러운 66일 궤적을 먼저 만든다.
+
+---
+
+## 8. 파생 함수 목록
+
+→ `v2/GATE1-SELECTORS.md`
