@@ -1,0 +1,16 @@
+{
+  "name": "sixtysix-v2",
+  "private": true,
+  "type": "module",
+  "description": "육십육 V2. Gate 1 은 도메인만 다룬다. React·Clock·Simulator 는 아직 없다.",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

@@ -228,8 +228,18 @@ getReservedMemberships(user, ctx) → Membership[]
 ```
 reserved   cohort.startDate > now
 active     cohort 진행 중
-graduated  cohort.endDate < now
+ended      cohort.endDate < now
 ```
+
+**`graduated`가 아니라 `ended`를 쓴다.** `graduated`는 "66일 기간이 끝났다"와
+"완주 조건을 충족했다"가 섞인다. 생애주기와 성취를 용어부터 분리한다.
+
+```
+Membership 생애주기 : reserved → active → ended
+성취              : badge · completion · progress
+```
+
+같은 이유로 `MemberState`의 마지막 값도 `graduated`가 아니라 `ended`다.
 
 정책 10이 "제거하지 않는다"이므로 `left` 상태와 `leftAt` 필드는 필요 없다.
 휴면은 Membership 상태가 아니라 **사용자 상태**(4장)다. 둘을 섞지 않는다.
@@ -244,10 +254,13 @@ V1.1의 `nextCohortId`는 `status === 'reserved'`인 Membership으로 대체된�
 
 ## 10. Gate 1 방화벽 테스트 (13개)
 
-ChatGPT가 제시한 12개에 Membership 불변 조건 1개를 더했다. **UI 없이 통과해야 한다.**
+**UI 없이 통과해야 한다.** 16번은 없으면 조용한 정합성 버그가 된다.
+`filled`는 합집합이라 1일로 보이는데 `checkins`와 `passes`가 둘 다 증가한다.
 
 | # | 검사 |
 |---:|---|
+| 15 | **동일 Membership + `cohortDay`에 Checkin은 최대 1개다** |
+| 16 | **동일 Membership + `cohortDay`에 Checkin과 PassUsage가 동시에 존재하지 않는다** |
 | 1 | Habit은 Cohort를 통해서만 하나로 결정된다 (`Membership.habitId` 없음) |
 | 2 | Checkin에 `status` · `streak` · `total` · `filled`이 존재하지 않는다 |
 | 3 | `cohortDay`는 생성 이후 변하지 않는다 |

@@ -109,6 +109,8 @@ Checkin { id, memberId, cohortId, day, createdAt, effectiveDate,
           text, photo, scope, status: normal|late|return, cheers }
 ```
 
+**상태: 완료 (2026-09-09)** — `sixtysix-v2/` 에 구현. 불변식 16개 + baseline acceptance 32개 테스트 통과.
+
 **통과 기준** — UI 완성도가 아니다.
 
 > Checkin 목록 하나를 주면 스트릭·인증 수·채운 날·상태·랭킹을 모두 계산할 수 있는가?
