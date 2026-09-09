@@ -79,6 +79,29 @@ test.describe('코호트 참여 — 화면 이동이 아니라 상태가 바뀌�
     expect((await readMe(page)).nextCohortId).toBe('c-running-0914');
   });
 
+  test('예약한 코호트는 마이 화면에서 다시 찾을 수 있다', async ({ page }) => {
+    // 저장만 되고 화면 어디에도 보이지 않으면 상태가 없는 것과 같다
+    await H.openApp(page, '#/challenge/c-running-0914');
+    await page.click('[data-action="join-cohort"]');
+    await page.click('[data-action="confirm-join"]');
+
+    await H.gotoHash(page, '#/my');
+    const row = page.locator('.settings-row', { hasText: '예약한 다음 코호트' });
+    await expect(row).toBeVisible();
+    await expect(row).toContainText('아침 러닝 · 9월 3기');
+    await expect(row).toContainText('시작');
+
+    // 그 행을 따라가면 예약한 코호트 상세로 간다
+    await row.click();
+    await expect(page).toHaveURL(/#\/challenge\/c-running-0914/);
+    await expect(page.locator('.sticky-bar .btn').first()).toContainText('시작 예정');
+  });
+
+  test('예약이 없으면 마이 화면에 그 행이 없다', async ({ page }) => {
+    await H.openApp(page, '#/my');
+    await expect(page.locator('.settings-row', { hasText: '예약한 다음 코호트' })).toHaveCount(0);
+  });
+
   test('예약을 취소하면 상태가 지워진다', async ({ page }) => {
     await H.openApp(page, '#/challenge/c-running-0914');
     await page.click('[data-action="join-cohort"]');

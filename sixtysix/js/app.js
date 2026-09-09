@@ -447,7 +447,7 @@ function screenChallenge(id) {
   } else if (full) {
     cta = [button('정원이 찼어요', { disabled: true }), button('비슷한 코호트 보기', { variant: 'secondary', href: '#/discover' })];
   } else if (isReserved) {
-    cta = [button('예약했어요', { disabled: true }), button('예약 취소하기', { variant: 'secondary', action: 'cancel-reserve' })];
+    cta = [button(formatDate(start) + ' 시작 예정', { disabled: true }), button('예약 취소하기', { variant: 'secondary', action: 'cancel-reserve' })];
   } else if (hasRunningCohort()) {
     // 정책 7: 한 번에 한 코호트. 진행 중이면 다음 코호트로 예약한다.
     cta = [button('다음 코호트로 예약하기', { action: 'join-cohort', id: cohort.id, icon: 'fa-calendar-plus' })];
@@ -839,6 +839,7 @@ function screenMy() {
   const earned = earnedBadges();
   const earnedCount = BADGES.filter(function (b) { return earned[b.id]; }).length;
   const demo = DEMO_STATES.filter(function (s) { return s.id === me.demoState; })[0] || DEMO_STATES[1];
+  const next = me.nextCohortId ? cohortById(me.nextCohortId) : null;
 
   return appHeader() + '<main class="screen screen--nav content-container">' +
     '<h1 class="sr-only">마이</h1>' +
@@ -891,6 +892,11 @@ function screenMy() {
       '<div class="settings-group"><p class="settings-group__label">코호트</p><div class="settings-card">' +
         '<a class="settings-row" href="#/challenge/' + esc(cohort.id) + '">내 코호트' +
           '<span class="settings-row__value">' + esc(cohort.name) + icon('fa-chevron-right') + '</span></a>' +
+        (next
+          ? '<a class="settings-row" href="#/challenge/' + esc(next.id) + '">예약한 다음 코호트' +
+              '<span class="settings-row__value">' + esc(next.name) + ' · ' +
+              esc(formatDate(new Date(next.start + 'T00:00:00'))) + ' 시작' + icon('fa-chevron-right') + '</span></a>'
+          : '') +
         '<a class="settings-row" href="#/graduation">완주 미리보기' +
           '<span class="settings-row__value">' + icon('fa-chevron-right') + '</span></a>' +
       '</div></div>' +
