@@ -72,7 +72,13 @@ Noto Sans KR 에 SemiBold(600) 가 없어 600 과 700 의 구분이 사라진다
 **2. 아이콘** — Font Awesome 글리프를 Figma 에서 쓸 수 없어
 `icon / fa-<name>` 이름의 자리표시 프레임으로 뒀다. 크기와 위치는 실제와 같다.
 
-**이미지 10장**은 회색 면으로 두고 레이어 이름에 파일명을 남겼다.
+**이미지 10장** 은 실제 파일을 올렸다. 다만 **WebP 는 Figma 가 `IMAGE` fill 로 받아들이지만 회색으로 렌더된다.**
+`sips -s format png` 로 변환해 다시 올려야 한다. 이 함정에 한 번 걸렸다.
+
+**아이콘**은 자리표시를 걷어내고 Font Awesome 6.5.2 의 실제 SVG 로 컴포넌트를 만들었다.
+`npm pack @fortawesome/fontawesome-free` → `svgs/solid/*.svg` 에서 `viewBox` 와 `d` 를 뽑아
+`figma.createNodeFromSvg()` 로 벡터를 만들고 24px 로 정규화한 뒤 컴포넌트화한다.
+`00_TOKENS` 페이지에 15개가 있다.
 
 ---
 
