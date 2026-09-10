@@ -2,9 +2,18 @@
 import type { Checkin, CheckinKind, Cohort, CohortDay, MembershipId, Facts } from '../types.js';
 import { getDeadline } from './time.js';
 
-export function getCheckins(facts: Facts, membershipId: MembershipId): Checkin[] {
+/**
+ * 내 인증 목록.
+ *
+ * throughDay 를 주면 그 일차까지만 보여준다.
+ * 시뮬레이터가 66일을 미리 만들어 두므로 시계가 가리키는 오늘 이후는
+ * 데이터에 있어도 노출되면 안 된다. Clock 은 커튼이지 생성 장치가 아니다.
+ */
+export function getCheckins(
+  facts: Facts, membershipId: MembershipId, throughDay?: number,
+): Checkin[] {
   return facts.checkins
-    .filter((c) => c.membershipId === membershipId)
+    .filter((c) => c.membershipId === membershipId && (throughDay === undefined || c.cohortDay <= throughDay))
     .slice()
     .sort((a, b) => a.cohortDay - b.cohortDay);
 }

@@ -12,6 +12,7 @@
 import type { Checkin, Cohort, PassUsage } from '../domain/types.js';
 import { policyFor } from '../domain/policies.js';
 import { getDeadline } from '../domain/selectors/time.js';
+import { epochForZonedTime } from '../infrastructure/timezone.js';
 import { intFor, pickFor, valueFor, type Dimension } from './random.js';
 import { getAttendanceProbability, type ArchetypeParams } from './archetypes.js';
 
@@ -55,9 +56,11 @@ export interface DayResult {
   readonly attended: boolean;
 }
 
-function dayStart(cohort: Cohort, day: number): Date {
+/** 서비스 시간대 기준으로 그 일차의 시각을 만든다 */
+function zonedAt(cohort: Cohort, day: number, hour: number, minute: number): Date {
+  const tz = policyFor(cohort.policyVersion).timeZone;
   const [y, m, d] = cohort.startDate.split('-').map(Number) as [number, number, number];
-  return new Date(y, m - 1, d + (day - 1));
+  return new Date(epochForZonedTime(y, m, d + (day - 1), hour, minute, tz));
 }
 
 export function stepMember(
@@ -91,11 +94,7 @@ export function stepMember(
 
     const createdAt = late
       ? new Date(getDeadline(cohort, day).getTime() + intFor(coord('checkin-time'), 30, 600) * 60_000)
-      : (() => {
-          const b = dayStart(cohort, day);
-          return new Date(b.getFullYear(), b.getMonth(), b.getDate(),
-            intFor(coord('checkin-time'), 6, 23), intFor(coord('text'), 0, 59), 0);
-        })();
+      : zonedAt(cohort, day, intFor(coord('checkin-time'), 6, 23), intFor(coord('text'), 0, 59));
 
     const checkin: Checkin = {
       id: `sim-${membershipId}-${day}`,

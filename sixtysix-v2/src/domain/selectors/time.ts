@@ -1,22 +1,18 @@
-/** 시간 — Clock 과 Cohort 를 잇는다. new Date() 를 직접 부르지 않는다. */
+/**
+ * 시간 — Clock 과 Cohort 를 잇는다.
+ *
+ * 여기서 new Date() 를 직접 부르지 않는다. now 는 인자로만 받는다.
+ * 그리고 Clock 은 "지금 몇 시인가"만 답한다.
+ * "이 시각이 어느 cohortDay 에 귀속되는가"는 정책이며 이 파일의 몫이다.
+ */
 import type { Cohort, CohortDay } from '../types.js';
 import { policyFor } from '../policies.js';
-
-const DAY_MS = 86_400_000;
-
-function startOfDay(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-}
-
-function cohortStart(cohort: Cohort): Date {
-  const [y, m, d] = cohort.startDate.split('-').map(Number) as [number, number, number];
-  return new Date(y, m - 1, d);
-}
+import { dayNumberOfIsoDate, epochForZonedTime, zonedDayNumber, zonedParts } from '../../infrastructure/timezone.js';
 
 /** 달력 기준 며칠째인가. 시작일이 1일차. */
 export function calendarDay(at: Date, cohort: Cohort): number {
-  const diff = startOfDay(at).getTime() - cohortStart(cohort).getTime();
-  return Math.round(diff / DAY_MS) + 1;
+  const tz = policyFor(cohort.policyVersion).timeZone;
+  return zonedDayNumber(at.getTime(), tz) - dayNumberOfIsoDate(cohort.startDate) + 1;
 }
 
 /**
@@ -28,8 +24,8 @@ export function calendarDay(at: Date, cohort: Cohort): number {
 export function getCohortDay(now: Date, cohort: Cohort): CohortDay {
   const policy = policyFor(cohort.policyVersion);
   const raw = calendarDay(now, cohort);
-  const day = now.getHours() < policy.deadlineHour ? raw - 1 : raw;
-  return Math.max(0, day);
+  const hour = zonedParts(now.getTime(), policy.timeZone).hour;
+  return Math.max(0, hour < policy.deadlineHour ? raw - 1 : raw);
 }
 
 export type CohortPhase = 'before' | 'running' | 'ended';
@@ -41,13 +37,11 @@ export function getCohortPhase(now: Date, cohort: Cohort): CohortPhase {
   return 'running';
 }
 
-/** 해당 일차의 마감 시각. 다음 날 04:00. */
+/** 해당 일차의 마감 시각. 다음 날 04:00. 서비스 시간대 기준이다. */
 export function getDeadline(cohort: Cohort, day: CohortDay): Date {
   const policy = policyFor(cohort.policyVersion);
-  const base = cohortStart(cohort);
-  const d = new Date(base.getFullYear(), base.getMonth(), base.getDate() + day);
-  d.setHours(policy.deadlineHour, 0, 0, 0);
-  return d;
+  const [y, m, d] = cohort.startDate.split('-').map(Number) as [number, number, number];
+  return new Date(epochForZonedTime(y, m, d + day, policy.deadlineHour, 0, policy.timeZone));
 }
 
 /** 늦은 인증을 받아주는 마지막 시각. 마감 + 12시간. */
@@ -71,7 +65,7 @@ export function resolveCheckinTarget(
   const policy = policyFor(cohort.policyVersion);
   const cal = calendarDay(now, cohort);
 
-  if (now.getHours() < policy.deadlineHour) {
+  if (zonedParts(now.getTime(), policy.timeZone).hour < policy.deadlineHour) {
     return { cohortDay: Math.max(1, cal - 1), late: false };
   }
 

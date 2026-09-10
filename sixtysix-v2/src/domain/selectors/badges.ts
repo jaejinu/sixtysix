@@ -2,6 +2,7 @@
 import type { BadgeId, Ctx, EarnedBadge, Facts, MembershipId } from '../types.js';
 import { getFilledDays } from './progress.js';
 import { getCheckins } from './checkin.js';
+import { getCohortDay } from './time.js';
 
 export interface BadgeDef {
   readonly id: BadgeId;
@@ -31,12 +32,10 @@ export function getEarnedBadges(
   membershipId: MembershipId,
   ctx: Ctx,
 ): EarnedBadge[] {
-  const filled = getFilledDays(facts, membershipId);
-  const checkinDays = new Set(getCheckins(facts, membershipId).map((c) => c.cohortDay));
-  const today = Math.min(
-    ctx.cohort.durationDays,
-    Math.max(0, filled.size === 0 ? 0 : Math.max(...filled)),
-  );
+  const clockDay = getCohortDay(ctx.now, ctx.cohort);
+  const filled = getFilledDays(facts, membershipId, clockDay);
+  const checkinDays = new Set(getCheckins(facts, membershipId, clockDay).map((c) => c.cohortDay));
+  const today = Math.min(ctx.cohort.durationDays, clockDay);
 
   const earned: EarnedBadge[] = [];
   const mark = (badgeId: BadgeId, day: number) => {

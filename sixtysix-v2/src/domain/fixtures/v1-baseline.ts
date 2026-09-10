@@ -7,8 +7,10 @@
  *   cohortDay 23 · checkins 20 · passes 1 · filled 21 · streak 9 · rank 4
  */
 import type { Checkin, Cohort, Facts, Habit, Membership, PassUsage } from '../types.js';
+import { SERVICE_TIME_ZONE, epochForZonedTime } from '../../infrastructure/timezone.js';
 
-export const BASELINE_NOW = new Date(2026, 8, 8, 9, 0, 0); // 2026-09-08 09:00
+/** 2026-09-08 09:00 KST */
+export const BASELINE_NOW = new Date(epochForZonedTime(2026, 9, 8, 9, 0, SERVICE_TIME_ZONE));
 export const COHORT_START = '2026-08-17';
 export const TODAY_DAY = 23;
 
@@ -26,17 +28,19 @@ const COHORT: Cohort = {
   policyVersion: 1,
 };
 
-/** 코호트 시작일 기준 day 일차의 특정 시각 */
+/**
+ * 코호트 시작일 기준 day 일차의 특정 시각.
+ * 서비스 시간대로 만든다. 머신 시간대에 따라 늦은 인증 판정이 달라지면 안 된다.
+ */
 function at(day: number, hour: number, minute = 0): string {
   const [y, m, d] = COHORT_START.split('-').map(Number) as [number, number, number];
-  const base = new Date(y, m - 1, d + (day - 1), hour, minute, 0);
-  return base.toISOString();
+  return new Date(epochForZonedTime(y, m, d + (day - 1), hour, minute, SERVICE_TIME_ZONE)).toISOString();
 }
 
 /** 늦은 인증은 다음 날 04:00 을 넘긴 시각에 만든다 */
 function lateAt(day: number): string {
   const [y, m, d] = COHORT_START.split('-').map(Number) as [number, number, number];
-  return new Date(y, m - 1, d + day, 6, 30, 0).toISOString();
+  return new Date(epochForZonedTime(y, m, d + day, 6, 30, SERVICE_TIME_ZONE)).toISOString();
 }
 
 let seq = 0;

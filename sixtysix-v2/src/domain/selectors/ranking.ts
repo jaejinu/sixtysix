@@ -4,14 +4,16 @@
  */
 import type { Cohort, CohortDay, CohortParticipation, Ctx, Facts, RankingRow } from '../types.js';
 import { getCheckins, isLate } from './checkin.js';
+import { getCohortDay } from './time.js';
 import { getMemberState, getStreak, isDormant } from './progress.js';
 import { getCohortMemberships } from './membership.js';
 
 export function getRanking(facts: Facts, cohort: Cohort, now: Date): RankingRow[] {
   const ctx: Ctx = { now, cohort };
+  const today = getCohortDay(now, cohort);
   const rows = getCohortMemberships(facts, cohort.id).map((m) => ({
     membershipId: m.id,
-    checkins: getCheckins(facts, m.id).length,
+    checkins: getCheckins(facts, m.id, today).length,
     streak: getStreak(facts, m.id, ctx),
     state: getMemberState(facts, m.id, ctx),
   }));

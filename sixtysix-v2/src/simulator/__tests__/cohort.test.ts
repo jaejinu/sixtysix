@@ -9,6 +9,7 @@ import {
   getComebackNeed, nonlinearSignal, MOMENTUM_OFF,
 } from '../cohort.js';
 import type { ArchetypeId } from '../archetypes.js';
+import { getAbMetrics } from '../metrics.js';
 
 const COHORT: Cohort = {
   id: 'c-reading-0817', habitId: 'reading', generation: '9월 2기',
@@ -148,51 +149,29 @@ describe('cohortMomentum A/B — 같은 seed 세계에서 계수만 바꾼다', 
   const ON = build(0.35);
   const factsOn = toFacts(ON);
 
-  const comebackWithin3 = (c: ReturnType<typeof build>) => {
-    const facts = toFacts(c);
-    let chances = 0;
-    let returned = 0;
-    for (const m of c.members) {
-      const filled = getFilledDays(facts, m.membershipId);
-      for (let d = 2; d <= 63; d++) {
-        if (filled.has(d) || filled.has(d - 1)) continue; // 미인증이 이어진 시점만
-        chances++;
-        if (filled.has(d + 1) || filled.has(d + 2) || filled.has(d + 3)) returned++;
-      }
-    }
-    return chances ? returned / chances : 0;
-  };
-
-  const dormantMembers = (c: ReturnType<typeof build>) =>
-    [...c.stateByMember.values()].filter((s) => s.dormantSpells > 0).length;
-
-  const steadyMeanFilled = (c: ReturnType<typeof build>) => {
-    const facts = toFacts(c);
-    const ids = c.members.filter((m) => m.archetype === 'steady').map((m) => m.membershipId);
-    return ids.reduce((s, id) => s + getFilledDays(facts, id).size, 0) / ids.length;
-  };
+  const M = (c: ReturnType<typeof build>) => getAbMetrics(c, toFacts(c), ctx);
+  const off = M(OFF);
+  const on = M(ON);
 
   it('결과를 출력한다', () => {
     const a = getCohortOutcome(factsOff, ctx);
     const b = getCohortOutcome(factsOn, ctx);
     console.log('\n  === cohortMomentum A/B (같은 seed, 계수만 0 → 0.35) ===');
-    console.log(`  3일 내 복귀율   ${(comebackWithin3(OFF) * 100).toFixed(1)}%  →  ${(comebackWithin3(ON) * 100).toFixed(1)}%`);
-    console.log(`  휴면 경험 인원   ${dormantMembers(OFF)}명  →  ${dormantMembers(ON)}명`);
-    console.log(`  stayedToEnd     ${a.stayedToEnd}명  →  ${b.stayedToEnd}명`);
-    console.log(`  평균 채운 날     ${a.meanFilled.toFixed(1)}  →  ${b.meanFilled.toFixed(1)}`);
-    console.log(`  filled66        ${a.filled66}명  →  ${b.filled66}명`);
-    console.log(`  perfect66       ${a.perfect66}명  →  ${b.perfect66}명`);
-    console.log(`  steady 평균      ${steadyMeanFilled(OFF).toFixed(1)}  →  ${steadyMeanFilled(ON).toFixed(1)}`);
-    console.log(`  (복귀율·휴면이 1차 지표. stayedToEnd 는 정의상 포화되어 판별력이 없다)\n`);
+    console.log(`  3일 내 복귀율   ${off.comebackWithin3}%  →  ${on.comebackWithin3}%`);
+    console.log(`  휴면 경험 인원   ${off.dormantMembers}명  →  ${on.dormantMembers}명`);
+    console.log(`  평균 채운 날     ${off.meanFilled}  →  ${on.meanFilled}`);
+    console.log(`  steady 평균      ${off.steadyMeanFilled}  →  ${on.steadyMeanFilled}`);
+    console.log(`  stayedToEnd     ${off.stayedToEnd}명  →  ${on.stayedToEnd}명 (보조 지표)`);
+    console.log(`  filled66 ${a.filled66}명 → ${b.filled66}명 · perfect66 ${a.perfect66}명 → ${b.perfect66}명\n`);
     expect(a.members).toBe(29);
   });
 
   it('① 3일 내 복귀율이 오른다 — 직접 효과', () => {
-    expect(comebackWithin3(ON)).toBeGreaterThan(comebackWithin3(OFF));
+    expect(on.comebackWithin3).toBeGreaterThan(off.comebackWithin3);
   });
 
   it('② 휴면 인원이 줄거나 같다 — 이탈 방지', () => {
-    expect(dormantMembers(ON)).toBeLessThanOrEqual(dormantMembers(OFF));
+    expect(on.dormantMembers).toBeLessThanOrEqual(off.dormantMembers);
   });
 
   it('③ 평균 채운 날이 늘어난다', () => {
@@ -212,8 +191,7 @@ describe('cohortMomentum A/B — 같은 seed 세계에서 계수만 바꾼다', 
 
   it('⑥ steady 에게 효과가 과도하게 번지지 않는다', () => {
     // 연속 참여 중인 멤버에게는 보정이 적용되지 않아야 한다
-    const diff = steadyMeanFilled(ON) - steadyMeanFilled(OFF);
-    expect(diff).toBeLessThan(1.5);
+    expect(on.steadyMeanFilled - off.steadyMeanFilled).toBeLessThan(1.5);
   });
 
   it('계수 0 이면 momentum 을 끈 것과 완전히 같다', () => {

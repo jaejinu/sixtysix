@@ -1,3 +1,5 @@
+import { SERVICE_TIME_ZONE } from '../infrastructure/timezone.js';
+
 /**
  * 코호트 정책. Cohort.policyVersion 으로 어느 판을 쓸지 고른다.
  * 규칙이 바뀌어도 기존 코호트의 과거 판단이 재해석되지 않게 하기 위한 장치다.
@@ -16,6 +18,8 @@ export interface Policy {
   /** 연속 미인증이 이 일수에 도달하면 휴면 (정책 10) */
   readonly dormancyDays: number;
   readonly textMaxLength: number;
+  /** 마감 시각을 판정하는 기준 시간대. 브라우저 로컬에 기대지 않는다 */
+  readonly timeZone: string;
 }
 
 export const POLICY_V1: Policy = {
@@ -27,6 +31,7 @@ export const POLICY_V1: Policy = {
   lateWindowHours: 12,
   dormancyDays: 7,
   textMaxLength: 40,
+  timeZone: SERVICE_TIME_ZONE,
 };
 
 const POLICIES: Record<number, Policy> = { 1: POLICY_V1 };

@@ -12,11 +12,14 @@ import type { Ctx, Facts, MembershipId } from '../types.js';
 import { getCheckins } from './checkin.js';
 import { getFilledDays, getPassUsages } from './progress.js';
 import { getMembershipStatus, getMembership } from './membership.js';
+import { getCohortDay } from './time.js';
 
 /** 마지막으로 직접 행동(인증 또는 면제권)한 일차. 응원만 누른 것은 세지 않는다. */
-export function getLastEngagementDay(facts: Facts, membershipId: MembershipId): number {
+export function getLastEngagementDay(
+  facts: Facts, membershipId: MembershipId, throughDay?: number,
+): number {
   let last = 0;
-  for (const d of getFilledDays(facts, membershipId)) if (d > last) last = d;
+  for (const d of getFilledDays(facts, membershipId, throughDay)) if (d > last) last = d;
   return last;
 }
 
@@ -24,19 +27,21 @@ export function getLastEngagementDay(facts: Facts, membershipId: MembershipId): 
 export function stayedToEnd(facts: Facts, membershipId: MembershipId, ctx: Ctx): boolean {
   const membership = getMembership(facts, membershipId);
   if (getMembershipStatus(membership, ctx.cohort, ctx.now) !== 'ended') return false;
-  return getLastEngagementDay(facts, membershipId) >= ctx.cohort.durationDays - 6;
+  const today = getCohortDay(ctx.now, ctx.cohort);
+  return getLastEngagementDay(facts, membershipId, today) >= ctx.cohort.durationDays - 6;
 }
 
 /** 66칸을 모두 채웠는가. 면제권도 인정한다. 서비스가 공식으로 제공하는 완주 장치이기 때문이다. */
 export function filled66(facts: Facts, membershipId: MembershipId, ctx: Ctx): boolean {
-  return getFilledDays(facts, membershipId).size >= ctx.cohort.durationDays;
+  return getFilledDays(facts, membershipId, getCohortDay(ctx.now, ctx.cohort)).size >= ctx.cohort.durationDays;
 }
 
 /** 면제권 없이 66일을 전부 인증했는가. 30명 중 0명이어도 이상하지 않다. */
 export function perfect66(facts: Facts, membershipId: MembershipId, ctx: Ctx): boolean {
+  const today = getCohortDay(ctx.now, ctx.cohort);
   return (
-    getCheckins(facts, membershipId).length >= ctx.cohort.durationDays &&
-    getPassUsages(facts, membershipId).length === 0
+    getCheckins(facts, membershipId, today).length >= ctx.cohort.durationDays &&
+    getPassUsages(facts, membershipId, today).length === 0
   );
 }
 
@@ -58,7 +63,7 @@ export function getCohortOutcome(facts: Facts, ctx: Ctx): CohortOutcome {
     if (stayedToEnd(facts, m.id, ctx)) stayed++;
     if (filled66(facts, m.id, ctx)) full++;
     if (perfect66(facts, m.id, ctx)) perfect++;
-    filledSum += getFilledDays(facts, m.id).size;
+    filledSum += getFilledDays(facts, m.id, getCohortDay(ctx.now, ctx.cohort)).size;
   }
   return {
     members: members.length,

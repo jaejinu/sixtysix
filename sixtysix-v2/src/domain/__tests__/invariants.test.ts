@@ -119,9 +119,10 @@ describe('파생 — 계산 규칙', () => {
 
   it('10. 면제권은 랭킹의 인증 수를 증가시키지 않는다', () => {
     const before = getRanking(facts, BASELINE.cohort, BASELINE.now).find((r) => r.membershipId === me)!;
+    // 13일차는 미인증일이라 면제권을 쓸 수 있다. 미래 일차는 시계에 가려 세지 않으므로 쓰지 않는다.
     const withPass: Facts = {
       ...facts,
-      passUsages: [...facts.passUsages, { id: 'pu-2', membershipId: me, cohortDay: 30, createdAt: BASELINE.now.toISOString() }],
+      passUsages: [...facts.passUsages, { id: 'pu-2', membershipId: me, cohortDay: 13, createdAt: BASELINE.now.toISOString() }],
     };
     const after = getRanking(withPass, BASELINE.cohort, BASELINE.now).find((r) => r.membershipId === me)!;
     expect(after.checkins).toBe(before.checkins);
