@@ -10,10 +10,10 @@
 | | |
 |---|---|
 | 무엇 | 같은 날 시작한 30명 코호트와 66일 습관을 인증·완주하는 모바일 웹 |
-| 지금 단계 | 강의 `beginner-mvp-v2` **03단계 (Figma V1 이전) 진행 중** |
+| 지금 단계 | 강의 `beginner-mvp-v2` **03단계 (Figma V1 이전) 완료** → 04단계 시작 |
 | V1 | **동결됨** (`v1.1` 태그). 고치지 않는다 |
 | V2 | Gate 1~3 완료 (도메인·시뮬레이터·Clock). React 아직 없음 |
-| 다음 할 일 | Figma `01_V1_CURRENT` 에 남은 **9화면** 이전 → 04단계 V2 Wireframe |
+| 다음 할 일 | **04단계 V2 Wireframe** (`v2/V2-SCOPE.md` 기준) |
 
 **지금 당장 할 일은 6장에 있다.**
 
@@ -162,56 +162,33 @@ git push origin main
 
 ---
 
-## 6. 다음에 할 일 (03단계 이어서)
+## 6. 다음에 할 일 (04단계)
 
-### 6.1 Figma 남은 9화면
+### 6.1 03단계는 끝났다
 
-파일 https://www.figma.com/design/wXlbUU8EH8os9fgDA9omoB
-페이지 `01_V1_CURRENT`
+Figma `01_V1_CURRENT` 에 **12화면 + `HOME / States` 5종**이 모두 들어갔다.
+프레임 목록·높이·차이는 `v2/FIGMA-V1-TRANSFER.md` 에 있다. 여기서 반복하지 않는다.
 
-| 화면 | 상태 | 실측 높이(main) |
-|---|---|---:|
-| 홈 (연속 중) | ✅ `430×2245` | — |
-| 코호트 피드 | ✅ `430×3889` | — |
-| 기록 | 🔜 | 2640 |
-| 챌린지 탐색 | 🔜 | 2329 |
-| 챌린지 상세 | 🔜 | 1954 |
-| 졸업 | 🔜 | 1933 |
-| 마이 | 🔜 | 1648 |
-| 코호트 랭킹 | 🔜 | 1527 |
-| 인증 상세 | 🔜 | 1030 |
-| 인증 작성 | 🔜 | 1008 |
-| 공지 | 🔜 | 548 → **430×932 그대로** |
-| 온보딩 | 🔜 | → **430×932 그대로** |
+**여기서 확정된 것**
 
-**프레임 규칙 (확정)**
-
-```
-NAME / Full Scroll  430×N
-├─ Viewport Guide / 430×932        코랄 점선, 잠금, 숨김 가능
-├─ AppHeader (sticky top)  또는  DetailHeader
-├─ main
-└─ BottomNavigation / fixed / viewport-bottom  398×85   ← y=837 고정
-   또는 StickyActionBar / fixed / viewport-bottom
-```
-
-- 고정 요소를 **프레임 맨 아래로 보내지 않는다.** 실제 동작 위치(뷰포트 하단)에 둔다.
-- 높이는 필요한 만큼만. 932 안에 끝나면 늘리지 않는다.
-- Screenshot 이 아니라 오토레이아웃 프레임 + Text Layer 로 재구성한다.
+- 프레임 규칙: `NAME / Full Scroll 430×N` + `Viewport Guide 430×932`
+  + 고정 요소는 **뷰포트 하단(y=837)** 에 두고 프레임 맨 아래로 보내지 않는다
+- 높이는 필요한 만큼만. 932 안에 끝나면 늘리지 않는다(공지)
+- 스크린샷이 아니라 오토레이아웃 프레임 + Text Layer 로 재구성
 - 레이어 이름에 원래 컴포넌트명과 규격을 남긴다
-  (`TodayHero 394×426`, `icon / fa-house`, `image / habit-reading.webp`).
+  (`TodayHero 394×426`, `icon / fa-house`, `image / habit-reading.webp`)
 
 **대체한 것**
 
 | | |
 |---|---|
 | 폰트 | Pretendard 없음 → **Noto Sans KR** (400→Regular, 500→Medium, 600·700→Bold) |
-| 아이콘 | Font Awesome 없음 → `icon / fa-<name>` 자리표시 프레임 |
-| 이미지 | 회색 면 + 레이어명에 파일명 |
+| 아이콘 | Font Awesome 폰트 못 씀 → **실제 SVG 벡터 컴포넌트 25종** (`00_TOKENS`) |
+| 이미지 | 실제 파일 10장 (PNG 로 변환해 업로드) |
 
-**아이콘·이미지 넣는 법 (검증됨 — 그대로 따라 하면 된다)**
+폰트 대체 때문에 프레임 높이가 화면당 **2~3% 짧다.** 맞출 방법이 없다. 기록만 해 뒀다.
 
-자리표시로 두면 화면이 조잡해 보인다. 처음부터 실물을 넣는다.
+### 6.2 Figma 를 또 만질 때 — 검증된 방법과 함정
 
 ```bash
 # 아이콘 — Font Awesome 실제 SVG
@@ -221,21 +198,22 @@ tar -xzf fortawesome-fontawesome-free-6.5.2.tgz
 ```
 
 ```js
-// Figma 에서 벡터 컴포넌트로
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}"><path d="${d}"/></svg>`;
 const node = figma.createNodeFromSvg(svg);
 node.rescale(24 / Math.max(vw, vh));          // 24px 기준 정규화
 const comp = figma.createComponentFromNode(node);
 comp.name = `icon / fa-${name}`;
+comp.fills = [];                              // ★ 안 비우면 흰 사각형이 찍힌다
 ```
 
-`00_TOKENS` 페이지에 **컴포넌트 15개가 이미 있다.** 부족하면 같은 방법으로 추가한다.
+`00_TOKENS` 에 **25개**가 있다. 부족하면 같은 방법으로 추가한다.
 인스턴스 색은 내부 VECTOR 의 `fills` 를 바꾼다.
 
 ```
-이미 만든 것: magnifying-glass · bullhorn · pen-to-square · chevron-right · circle-check
-             moon · align-left · rotate-right · circle-info · house · layer-group
-             calendar-check · user · heart · bookmark
+magnifying-glass · bullhorn · pen-to-square · chevron-right · chevron-left · circle-check
+moon · align-left · rotate-right · circle-info · house · layer-group · calendar-check
+user · heart · bookmark · seedling · fire · fire-flame-curved · flag-checkered
+mountain-sun · trophy · ranking-star · award · clock · pause · shield-halved
 ```
 
 이미지는 `upload_assets` 에 `nodeIds` 를 주면 기존 노드 fill 로 바로 들어간다.
@@ -244,33 +222,27 @@ comp.name = `icon / fa-${name}`;
 > **화면에는 회색으로 렌더된다.** 한 번 걸렸다.
 > `sips -s format png in.webp --out out.png` 로 변환해서 올린다.
 
-**Figma 작업 시 주의**
+**함정 목록 (전부 실제로 밟았다)**
 
 - `use_figma` 호출 전 `skill://figma/figma-use/SKILL.md` 를 반드시 읽는다.
-- `figma.createAutoLayout()` 은 기본 흰색 배경이 있다. **컨테이너는 `fills = []` 로 비운다.**
-  (안 비우면 Hero 위에 흰 박스가 뜬다)
-- 부모가 오토레이아웃이 아니면 `layoutPositioning = 'ABSOLUTE'` 가 실패한다.
-  일반 프레임의 자식은 그냥 `x`/`y` 로 놓으면 된다.
-- 정확한 값이 필요하면 실행 중인 V1.1 에서 `getComputedStyle` 로 실측한다. 문서를 옮겨 적지 않는다.
+- `figma.createAutoLayout()` 은 **기본 흰색 배경**이 있다. 컨테이너는 `fills = []` 로 비운다.
+- `createComponentFromNode()` 도 **흰색 fill 이 남는다.** 아이콘 컴포넌트에 `fills = []`.
+  원본 컴포넌트만 고치면 배치된 인스턴스가 전부 따라 고쳐진다.
+- **`layoutSizingHorizontal = 'FILL'` 은 `appendChild` 뒤에만 된다.** 순서를 뒤집으면 throw.
+- `nameRow.remove()` 는 **자식까지 같이 지운다.** 안에 있던 배지를 먼저 꺼내야 한다.
+- 부모가 오토레이아웃이 아니면 `layoutPositioning = 'ABSOLUTE'` 가 실패한다. 그냥 `x`/`y`.
+- 오토레이아웃 안에서 절대배치 요소의 좌표를 잡을 때는 **모든 자식을 넣은 뒤에** 계산한다.
+  중간에 `it.y` 를 읽으면 이후 reflow 로 어긋난다(졸업 타임라인에서 100px 밀렸다).
 - **`SectionHeader` 는 반드시 `layoutSizingHorizontal = 'FILL'` + `SPACE_BETWEEN`.**
-  안 그러면 제목과 "전체 보기" 가 붙어버린다. 이미 한 번 고쳤다.
-- 만든 뒤 반드시 `screenshot()` 으로 실제 화면과 대조한다. 구조·순서·간격만 맞추고 디자인은 개선하지 않는다.
-
-### 6.2 미해결 질문 — 사용자 답변 대기 중
-
-> **홈의 상태 변형 5개(0일차·오늘 완료·끊김·휴면·완주)를 어떻게 둘 것인가?**
->
-> 제안: 전체 화면을 5벌 복제하지 말고 **Hero + CTA + (끊김·휴면일 때) HelpQuickMenu 까지만**
-> 잘라서 `HOME / States` 섹션에 5개 나열한다. 상태에 따라 실제로 달라지는 건 그 영역뿐이고
-> fold 비교는 대표 상태 하나로 충분하다.
->
-> 사용자 확인 후 진행한다.
+- 정확한 값은 실행 중인 V1.1 에서 `getComputedStyle` 로 **실측**한다. 문서를 옮겨 적지 않는다.
+- 만든 뒤 반드시 `get_screenshot` 으로 실제 화면과 대조한다.
+  구조·순서·간격만 맞추고 **디자인은 개선하지 않는다.**
 
 ### 6.3 그다음 (04단계 이후)
 
 ```
-03. Figma V1 이전        ← 지금 여기
-04. V2 Wireframe         Gate 1~3 결과를 근거로 새 화면·상태 설계
+03. Figma V1 이전        ✅ 완료
+04. V2 Wireframe         ← 지금 여기. Gate 1~3 결과를 근거로 새 화면·상태 설계
 05. Figma 디자인 고도화   직접 손으로 하는 구간
 06. V2 디자인 최종 점검
 07. V2 .md 업데이트
@@ -287,6 +259,14 @@ comp.name = `icon / fa-${name}`;
 - 내 인증이 섞인 피드 (V1 은 내 인증이 피드에 안 나타남)
 - 30명 코호트 화면 (V1 은 8명)
 - 복귀 상황
+
+**03단계에서 넘어온 숙제 두 개** (`v2/V1-DIAGNOSIS.md` §3.5)
+
+1. 사진 위 텍스트 대비 — Scrim 을 텍스트 블록 높이까지 올리거나 텍스트 영역을 별도 면으로 분리.
+   `#F04E2C` 는 배경 대비 3.4:1 이라 원래 텍스트용이 아니다.
+   **V2 는 이미지를 먼저 넣고 화면을 만든다.**
+2. 파생 값 검사 층 — 인증 작성 카운터가 입력과 무관한 숫자를 보여줬는데
+   테스트 210건이 못 잡았다. V2 검사 대상은 **표시 / 저장 상태 / 파생 값** 세 층.
 
 ---
 
