@@ -58,20 +58,20 @@ const MAX_P = 0.97;
  */
 export const ARCHETYPES: Record<ArchetypeId, ArchetypeParams> = {
   steady: {
-    baseAttendance: 0.80,
+    baseAttendance: 0.78,
     streakMomentum: 0.14,
     missDrag: 0.06,
-    comebackStrength: 0.20,
+    comebackStrength: 0.14,
     fatigueSlope: 0.05,
     latePropensity: 0.05,
     simpleCheckinPropensity: 0.10,
     reactionPropensity: 0.30,
   },
   ordinary: {
-    baseAttendance: 0.70,
+    baseAttendance: 0.66,
     streakMomentum: 0.10,
-    missDrag: 0.12,
-    comebackStrength: 0.16,
+    missDrag: 0.16,
+    comebackStrength: 0.09,
     fatigueSlope: 0.10,
     latePropensity: 0.10,
     simpleCheckinPropensity: 0.22,
@@ -79,10 +79,10 @@ export const ARCHETYPES: Record<ArchetypeId, ArchetypeParams> = {
   },
   deadline: {
     // 출석 패턴은 ordinary 와 비슷하고 늦는 성향만 크다
-    baseAttendance: 0.72,
+    baseAttendance: 0.68,
     streakMomentum: 0.10,
-    missDrag: 0.11,
-    comebackStrength: 0.18,
+    missDrag: 0.15,
+    comebackStrength: 0.10,
     fatigueSlope: 0.08,
     latePropensity: 0.42,
     simpleCheckinPropensity: 0.30,
@@ -90,10 +90,10 @@ export const ARCHETYPES: Record<ArchetypeId, ArchetypeParams> = {
   },
   hotStart: {
     // 초반은 steady 급, 후반에 크게 꺾인다
-    baseAttendance: 0.84,
+    baseAttendance: 0.82,
     streakMomentum: 0.06,
-    missDrag: 0.16,
-    comebackStrength: 0.10,
+    missDrag: 0.20,
+    comebackStrength: 0.05,
     fatigueSlope: 0.34,
     latePropensity: 0.12,
     simpleCheckinPropensity: 0.24,
@@ -101,10 +101,10 @@ export const ARCHETYPES: Record<ArchetypeId, ArchetypeParams> = {
   },
   comeback: {
     // 잘 빠지지만 아주 사라지지는 않는 사람
-    baseAttendance: 0.58,
+    baseAttendance: 0.55,
     streakMomentum: 0.08,
     missDrag: 0.26,
-    comebackStrength: 0.40,
+    comebackStrength: 0.26,
     fatigueSlope: 0.06,
     latePropensity: 0.18,
     simpleCheckinPropensity: 0.26,
@@ -112,10 +112,10 @@ export const ARCHETYPES: Record<ArchetypeId, ArchetypeParams> = {
   },
   atRisk: {
     // comeback 과 missDrag 는 비슷하지만 돌아오는 힘이 약하다
-    baseAttendance: 0.52,
+    baseAttendance: 0.46,
     streakMomentum: 0.06,
-    missDrag: 0.30,
-    comebackStrength: 0.08,
+    missDrag: 0.34,
+    comebackStrength: 0.03,
     fatigueSlope: 0.14,
     latePropensity: 0.20,
     simpleCheckinPropensity: 0.34,

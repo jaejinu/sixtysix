@@ -17,7 +17,8 @@ export const BADGES: readonly BadgeDef[] = [
   { id: 'streak21', name: '21일 연속', condition: '21일 연속 인증', icon: 'fa-fire-flame-curved' },
   { id: 'turn33', name: '반환점', condition: '33일차 인증', icon: 'fa-flag-checkered' },
   { id: 'day50', name: '50일', condition: '50일차 인증', icon: 'fa-mountain-sun' },
-  { id: 'complete66', name: '66일 완주', condition: '66일 인증 완료', icon: 'fa-trophy' },
+  { id: 'complete66', name: '66일 완주', condition: '66칸을 모두 채우면', icon: 'fa-trophy' },
+  { id: 'perfect66', name: '완벽 완주', condition: '면제권 없이 66일 전부 인증', icon: 'fa-crown' },
 ];
 
 /**
@@ -61,7 +62,11 @@ export function getEarnedBadges(
       if (run >= 21) mark('streak21', d);
       if (d >= 33) mark('turn33', d);
       if (d >= 50) mark('day50', d);
-      if (filledCount >= ctx.cohort.durationDays) mark('complete66', d);
+      if (filledCount >= ctx.cohort.durationDays) {
+        mark('complete66', d);
+        // 면제권을 한 번도 쓰지 않았다면 완벽 완주
+        if (checkinCount >= ctx.cohort.durationDays) mark('perfect66', d);
+      }
     } else {
       run = 0;
       sawMiss = true;

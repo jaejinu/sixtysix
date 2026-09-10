@@ -27,7 +27,7 @@ function run(id: ArchetypeId, version = 1): MemberTrajectory {
     throughDay: 66,
     photoRefs: PHOTOS,
     texts: TEXTS,
-    cohortMomentum: 0,
+   
   });
 }
 
@@ -51,7 +51,7 @@ describe('궤적 — 결정론', () => {
   it('throughDay 를 늘려도 앞선 날의 결과는 변하지 않는다', () => {
     const to23 = simulateMember({
       simulatorVersion: 1, cohort: COHORT, membershipId: 'ms-ordinary',
-      archetype: ARCHETYPES.ordinary, throughDay: 23, photoRefs: PHOTOS, texts: TEXTS, cohortMomentum: 0,
+      archetype: ARCHETYPES.ordinary, throughDay: 23, photoRefs: PHOTOS, texts: TEXTS,
     });
     const to66 = T.ordinary;
     const prefix = to66.checkins.filter((c) => c.cohortDay <= 23);
@@ -119,7 +119,7 @@ describe('궤적 — 원형이 구분되는가', () => {
         const t = simulateMember({
           simulatorVersion: 1, cohort: COHORT, membershipId: `ms-${id}-${i}`,
           archetype: ARCHETYPES[id], throughDay: 66,
-          photoRefs: PHOTOS, texts: TEXTS, cohortMomentum: 0,
+          photoRefs: PHOTOS, texts: TEXTS,
         });
         const early = t.checkins.filter((c) => c.cohortDay <= 22).length;
         const late = t.checkins.filter((c) => c.cohortDay > 44).length;
@@ -157,9 +157,13 @@ describe('궤적 요약 출력', () => {
       return `${id.padEnd(9)} 인증 ${String(s.checkins).padStart(2)} · 늦은 ${String(s.lates).padStart(2)} · 간단 ${String(s.simples).padStart(2)} · 면제 ${s.passes} · 최장연속 ${String(s.bestStreak).padStart(2)} · 휴면 ${s.dormantSpells} · 복귀 ${s.comebacks}`;
     });
     console.log('\n' + rows.join('\n') + '\n');
+    // 임의의 하한을 두지 않는다. atRisk 가 사실상 이탈하는 것은 서비스가 말하는 문제 그 자체다.
     for (const id of IDS) {
-      expect(T[id].summary.checkins, `${id} 인증 수`).toBeGreaterThan(15);
-      expect(T[id].summary.checkins, `${id} 인증 수`).toBeLessThan(66);
+      expect(T[id].summary.checkins, `${id} 는 완전히 사라지지 않는다`).toBeGreaterThan(5);
+      expect(T[id].summary.checkins, `${id} 는 만점이 아니다`).toBeLessThan(66);
     }
+    // 대신 분포가 넓게 퍼져 있어야 한다. 좁으면 원형이 구분되지 않는다는 뜻이다
+    const counts = IDS.map((id) => T[id].summary.checkins);
+    expect(Math.max(...counts) - Math.min(...counts)).toBeGreaterThan(20);
   });
 });

@@ -1,35 +1,147 @@
 /**
- * 멤버 한 명의 66일 궤적.
+ * 멤버 한 명의 하루.
  *
  * 출력은 판단이 아니라 **도메인 사실**(Checkin · PassUsage)이다.
  * late·simple·returning 은 여기서 정하지 않는다. Gate 1 셀렉터가 createdAt 과
  * 이력에서 파생한다. 시뮬레이터는 "언제 무엇을 했는가"만 만든다.
+ *
+ * 하루 단위(stepMember)로 쪼개 둔 이유는 코호트 신호 때문이다.
+ * 코호트 전체를 날짜 우선으로 돌면서 이미 확정된 과거 날짜의 참여율만
+ * 신호로 쓰면 순환 없이 결정론을 유지할 수 있다.
  */
-import type { Checkin, Cohort, PassUsage, Visibility } from '../domain/types.js';
+import type { Checkin, Cohort, PassUsage } from '../domain/types.js';
 import { policyFor } from '../domain/policies.js';
 import { getDeadline } from '../domain/selectors/time.js';
 import { intFor, pickFor, valueFor, type Dimension } from './random.js';
 import { getAttendanceProbability, type ArchetypeParams } from './archetypes.js';
 
-export interface SimulateInput {
+export interface MemberSimConfig {
   readonly simulatorVersion: number;
   readonly cohort: Cohort;
   readonly membershipId: string;
   readonly archetype: ArchetypeParams;
-  /** 어디까지 시뮬레이션할지. 미래는 만들지 않는다 */
-  readonly throughDay: number;
   readonly photoRefs: readonly string[];
   readonly texts: readonly string[];
-  /** Gate 2 첫 버전에서는 0 */
-  readonly cohortMomentum?: number;
-  /** 일차별 어제 참여율. cohortMomentum 이 0 이면 쓰이지 않는다 */
-  readonly participationByDay?: ReadonlyMap<number, number>;
+}
+
+/** 하루를 넘어가며 이어지는 상태. 경로 의존은 전부 여기에 담긴다. */
+export interface MemberState {
+  streak: number;
+  misses: number;
+  passesUsed: number;
+  best: number;
+  dormantSpells: number;
+  comebacks: number;
+  missTotal: number;
+  lastEngagementDay: number;
+}
+
+export function initialMemberState(): MemberState {
+  return { streak: 0, misses: 0, passesUsed: 0, best: 0, dormantSpells: 0, comebacks: 0, missTotal: 0, lastEngagementDay: 0 };
+}
+
+/**
+ * 코호트가 복귀 확률에 주는 보정. 연속 참여 중인 멤버에게는 적용하지 않는다.
+ * 계산은 cohort.ts 가 넘겨준다.
+ */
+export interface CohortSignal {
+  readonly comebackBoost: number;
+}
+
+export interface DayResult {
+  readonly checkin?: Checkin;
+  readonly passUsage?: PassUsage;
+  readonly probability: number;
+  readonly attended: boolean;
+}
+
+function dayStart(cohort: Cohort, day: number): Date {
+  const [y, m, d] = cohort.startDate.split('-').map(Number) as [number, number, number];
+  return new Date(y, m - 1, d + (day - 1));
+}
+
+export function stepMember(
+  cfg: MemberSimConfig,
+  state: MemberState,
+  day: number,
+  signal?: CohortSignal,
+): DayResult {
+  const { cohort, membershipId, archetype, simulatorVersion } = cfg;
+  const policy = policyFor(cohort.policyVersion);
+  const coord = (dimension: Dimension) => ({
+    simulatorVersion, cohortId: cohort.id, membershipId, cohortDay: day, dimension,
+  });
+
+  const base = getAttendanceProbability({
+    archetype,
+    previousStreak: state.streak,
+    consecutiveMisses: state.misses,
+    cohortDay: day,
+    durationDays: cohort.durationDays,
+  });
+  // 코호트 보정은 확률 함수 밖에서 더한다. 계수 0 이면 base 와 완전히 같다.
+  const probability = Math.min(0.97, base + (signal?.comebackBoost ?? 0));
+
+  const attended = valueFor(coord('attendance')) < probability;
+
+  if (attended) {
+    if (state.misses > 0) state.comebacks++;
+    const late = valueFor(coord('late')) < archetype.latePropensity;
+    const simple = valueFor(coord('simple')) < archetype.simpleCheckinPropensity;
+
+    const createdAt = late
+      ? new Date(getDeadline(cohort, day).getTime() + intFor(coord('checkin-time'), 30, 600) * 60_000)
+      : (() => {
+          const b = dayStart(cohort, day);
+          return new Date(b.getFullYear(), b.getMonth(), b.getDate(),
+            intFor(coord('checkin-time'), 6, 23), intFor(coord('text'), 0, 59), 0);
+        })();
+
+    const checkin: Checkin = {
+      id: `sim-${membershipId}-${day}`,
+      membershipId,
+      cohortDay: day,
+      createdAt: createdAt.toISOString(),
+      text: pickFor(coord('text'), cfg.texts),
+      ...(simple ? {} : { photoRef: pickFor(coord('photo'), cfg.photoRefs) }),
+      visibility: 'cohort',
+    };
+
+    state.streak++;
+    if (state.streak > state.best) state.best = state.streak;
+    state.misses = 0;
+    state.lastEngagementDay = day;
+    return { checkin, probability, attended: true };
+  }
+
+  const wantsPass =
+    state.passesUsed < policy.passLimit && state.streak >= 5 && valueFor(coord('pass-use')) < 0.45;
+
+  if (wantsPass) {
+    const passUsage: PassUsage = {
+      id: `sim-pass-${membershipId}-${day}`,
+      membershipId,
+      cohortDay: day,
+      createdAt: new Date(getDeadline(cohort, day).getTime() - 3_600_000).toISOString(),
+    };
+    state.passesUsed++;
+    state.streak++;
+    if (state.streak > state.best) state.best = state.streak;
+    state.misses = 0;
+    state.lastEngagementDay = day;
+    return { passUsage, probability, attended: false };
+  }
+
+  state.streak = 0;
+  state.misses++;
+  state.missTotal++;
+  if (state.misses === policy.dormancyDays) state.dormantSpells++;
+  return { probability, attended: false };
 }
 
 export interface MemberTrajectory {
   readonly checkins: Checkin[];
   readonly passUsages: PassUsage[];
-  /** 검증용 요약. 저장하지 않는다 */
   readonly summary: {
     readonly checkins: number;
     readonly lates: number;
@@ -39,112 +151,23 @@ export interface MemberTrajectory {
     readonly bestStreak: number;
     readonly dormantSpells: number;
     readonly comebacks: number;
+    readonly lastEngagementDay: number;
   };
 }
 
-function dayStart(cohort: Cohort, day: number): Date {
-  const [y, m, d] = cohort.startDate.split('-').map(Number) as [number, number, number];
-  return new Date(y, m - 1, d + (day - 1));
-}
-
-export function simulateMember(input: SimulateInput): MemberTrajectory {
-  const { cohort, membershipId, archetype, simulatorVersion } = input;
-  const policy = policyFor(cohort.policyVersion);
-  const coord = (cohortDay: number, dimension: Dimension) => ({
-    simulatorVersion, cohortId: cohort.id, membershipId, cohortDay, dimension,
-  });
-
+/** 코호트 신호 없이 한 명만 돌린다. 원형 튜닝과 단위 테스트용. */
+export function simulateMember(
+  input: MemberSimConfig & { readonly throughDay: number },
+): MemberTrajectory {
+  const state = initialMemberState();
   const checkins: Checkin[] = [];
   const passUsages: PassUsage[] = [];
-
-  let streak = 0;
-  let misses = 0;
-  let passesUsed = 0;
-  let best = 0;
-  let dormantSpells = 0;
-  let comebacks = 0;
-  let wasDormant = false;
-  let missTotal = 0;
-
-  const last = Math.min(input.throughDay, cohort.durationDays);
+  const last = Math.min(input.throughDay, input.cohort.durationDays);
 
   for (let day = 1; day <= last; day++) {
-    const p = getAttendanceProbability({
-      archetype,
-      previousStreak: streak,
-      consecutiveMisses: misses,
-      cohortDay: day,
-      durationDays: cohort.durationDays,
-      ...(input.cohortMomentum !== undefined ? { cohortMomentum: input.cohortMomentum } : {}),
-      ...(input.participationByDay?.has(day - 1)
-        ? { yesterdayParticipation: input.participationByDay.get(day - 1)! }
-        : {}),
-    });
-
-    const attended = valueFor(coord(day, 'attendance')) < p;
-
-    if (attended) {
-      if (misses > 0) comebacks++;
-      if (wasDormant) wasDormant = false;
-
-      const late = valueFor(coord(day, 'late')) < archetype.latePropensity;
-      const simple = valueFor(coord(day, 'simple')) < archetype.simpleCheckinPropensity;
-
-      // 늦은 인증은 마감(다음 날 04:00)을 넘긴 시각에 만든다.
-      // 셀렉터가 이 createdAt 을 보고 late 를 파생한다.
-      const createdAt = late
-        ? new Date(getDeadline(cohort, day).getTime() + intFor(coord(day, 'checkin-time'), 30, 600) * 60_000)
-        : (() => {
-            const base = dayStart(cohort, day);
-            const hour = intFor(coord(day, 'checkin-time'), 6, 23);
-            const minute = intFor(coord(day, 'text'), 0, 59);
-            return new Date(base.getFullYear(), base.getMonth(), base.getDate(), hour, minute, 0);
-          })();
-
-      const visibility: Visibility = 'cohort';
-      checkins.push({
-        id: `sim-${membershipId}-${day}`,
-        membershipId,
-        cohortDay: day,
-        createdAt: createdAt.toISOString(),
-        text: pickFor(coord(day, 'text'), input.texts),
-        ...(simple ? {} : { photoRef: pickFor(coord(day, 'photo'), input.photoRefs) }),
-        visibility,
-      });
-
-      streak++;
-      if (streak > best) best = streak;
-      misses = 0;
-      continue;
-    }
-
-    // 인증하지 않은 날. 연속이 아깝고 면제권이 남았으면 쓴다.
-    const wantsPass =
-      passesUsed < policy.passLimit &&
-      streak >= 5 &&
-      valueFor(coord(day, 'pass-use')) < 0.45;
-
-    if (wantsPass) {
-      passUsages.push({
-        id: `sim-pass-${membershipId}-${day}`,
-        membershipId,
-        cohortDay: day,
-        createdAt: new Date(getDeadline(cohort, day).getTime() - 3_600_000).toISOString(),
-      });
-      passesUsed++;
-      streak++; // 면제권은 연속을 잇는다
-      if (streak > best) best = streak;
-      misses = 0;
-      continue;
-    }
-
-    streak = 0;
-    misses++;
-    missTotal++;
-    if (misses === policy.dormancyDays) {
-      dormantSpells++;
-      wasDormant = true;
-    }
+    const r = stepMember(input, state, day);
+    if (r.checkin) checkins.push(r.checkin);
+    if (r.passUsage) passUsages.push(r.passUsage);
   }
 
   return {
@@ -152,13 +175,14 @@ export function simulateMember(input: SimulateInput): MemberTrajectory {
     passUsages,
     summary: {
       checkins: checkins.length,
-      lates: checkins.filter((c) => new Date(c.createdAt).getTime() > getDeadline(cohort, c.cohortDay).getTime()).length,
+      lates: checkins.filter((c) => new Date(c.createdAt).getTime() > getDeadline(input.cohort, c.cohortDay).getTime()).length,
       simples: checkins.filter((c) => c.photoRef == null).length,
       passes: passUsages.length,
-      misses: missTotal,
-      bestStreak: best,
-      dormantSpells,
-      comebacks,
+      misses: state.missTotal,
+      bestStreak: state.best,
+      dormantSpells: state.dormantSpells,
+      comebacks: state.comebacks,
+      lastEngagementDay: state.lastEngagementDay,
     },
   };
 }
