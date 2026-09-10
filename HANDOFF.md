@@ -209,6 +209,41 @@ NAME / Full Scroll  430×N
 | 아이콘 | Font Awesome 없음 → `icon / fa-<name>` 자리표시 프레임 |
 | 이미지 | 회색 면 + 레이어명에 파일명 |
 
+**아이콘·이미지 넣는 법 (검증됨 — 그대로 따라 하면 된다)**
+
+자리표시로 두면 화면이 조잡해 보인다. 처음부터 실물을 넣는다.
+
+```bash
+# 아이콘 — Font Awesome 실제 SVG
+cd <scratch> && npm pack @fortawesome/fontawesome-free@6.5.2
+tar -xzf fortawesome-fontawesome-free-6.5.2.tgz
+# package/svgs/solid/<name>.svg 에서 viewBox 와 d 를 뽑는다
+```
+
+```js
+// Figma 에서 벡터 컴포넌트로
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}"><path d="${d}"/></svg>`;
+const node = figma.createNodeFromSvg(svg);
+node.rescale(24 / Math.max(vw, vh));          // 24px 기준 정규화
+const comp = figma.createComponentFromNode(node);
+comp.name = `icon / fa-${name}`;
+```
+
+`00_TOKENS` 페이지에 **컴포넌트 15개가 이미 있다.** 부족하면 같은 방법으로 추가한다.
+인스턴스 색은 내부 VECTOR 의 `fills` 를 바꾼다.
+
+```
+이미 만든 것: magnifying-glass · bullhorn · pen-to-square · chevron-right · circle-check
+             moon · align-left · rotate-right · circle-info · house · layer-group
+             calendar-check · user · heart · bookmark
+```
+
+이미지는 `upload_assets` 에 `nodeIds` 를 주면 기존 노드 fill 로 바로 들어간다.
+
+> ⚠️ **WebP 로 올리면 안 된다.** Figma 가 `IMAGE` fill 로 받아들이고 업로드도 200 을 주지만
+> **화면에는 회색으로 렌더된다.** 한 번 걸렸다.
+> `sips -s format png in.webp --out out.png` 로 변환해서 올린다.
+
 **Figma 작업 시 주의**
 
 - `use_figma` 호출 전 `skill://figma/figma-use/SKILL.md` 를 반드시 읽는다.
@@ -217,6 +252,9 @@ NAME / Full Scroll  430×N
 - 부모가 오토레이아웃이 아니면 `layoutPositioning = 'ABSOLUTE'` 가 실패한다.
   일반 프레임의 자식은 그냥 `x`/`y` 로 놓으면 된다.
 - 정확한 값이 필요하면 실행 중인 V1.1 에서 `getComputedStyle` 로 실측한다. 문서를 옮겨 적지 않는다.
+- **`SectionHeader` 는 반드시 `layoutSizingHorizontal = 'FILL'` + `SPACE_BETWEEN`.**
+  안 그러면 제목과 "전체 보기" 가 붙어버린다. 이미 한 번 고쳤다.
+- 만든 뒤 반드시 `screenshot()` 으로 실제 화면과 대조한다. 구조·순서·간격만 맞추고 디자인은 개선하지 않는다.
 
 ### 6.2 미해결 질문 — 사용자 답변 대기 중
 
