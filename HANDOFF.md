@@ -10,10 +10,10 @@
 | | |
 |---|---|
 | 무엇 | 같은 날 시작한 30명 코호트와 66일 습관을 인증·완주하는 모바일 웹 |
-| 지금 단계 | 강의 `beginner-mvp-v2` **04단계 (V2 Wireframe) 진행 중** |
+| 지금 단계 | 강의 `beginner-mvp-v2` **05단계 (Figma 디자인 고도화) 진행 중** |
 | V1 | **동결됨** (`v1.1` 태그). 고치지 않는다 |
 | V2 | Gate 1~3 완료 (도메인·시뮬레이터·Clock). React 아직 없음 |
-| 다음 할 일 | 04단계 구조 확정 → **05단계 Figma 디자인 고도화** |
+| 다음 할 일 | 남은 화면 고충실도 → 06 점검 → 07 .md 갱신 → **08 React** |
 
 **지금 당장 할 일은 6장에 있다.**
 
@@ -302,8 +302,8 @@ mountain-sun · trophy · ranking-star · award · clock · pause · shield-halv
 
 ```
 03. Figma V1 이전        ✅ 완료
-04. V2 Wireframe         ← 지금 여기 (구조 결정서 작성 완료 · 사용자 확인 대기)
-05. Figma 디자인 고도화   직접 손으로 하는 구간
+04. V2 Wireframe         ✅ 구조 결정서 + 저충실도 6화면
+05. Figma 디자인 고도화   ← 지금 여기 (홈·코호트 완료)
 06. V2 디자인 최종 점검
 07. V2 .md 업데이트
 08. React·TypeScript 구현  ← 검증된 Domain+Simulator+Clock 을 화면에 연결
