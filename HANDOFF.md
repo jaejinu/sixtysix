@@ -208,10 +208,22 @@ Figma `01_V1_CURRENT` 에 **12화면 + `HOME / States` 5종**이 모두 들어�
 - 행간 1.2 → 1.4 로 **섹션 제목이 화면당 30~40px 늘어난다.** 04단계 와이어프레임은 이 값으로 그린다.
 - Anton 자간 −3% 는 눈으로 확인한다. 글리프가 붙으면 디스플레이만 −2% 로 되돌린다.
 
-> ⚠️ **지금 Figma 에서는 Pretendard 가 안 잡힌다.** 로컬에 설치돼 있어도 그렇다.
-> 브라우저판 Figma 가 시스템 폰트에 접근하지 못하기 때문이다.
-> **데스크톱 앱**으로 열거나 **Figma Font Helper** 를 실행해야 한다.
-> 그전까지 Figma 안의 한글은 Noto Sans KR 대체이고, **행간·자간을 거기서 확정하면 안 된다.**
+> ⚠️ **Figma UI 에서는 Pretendard 가 정상 선택된다. 코드로만 안 된다.**
+> 플러그인 실행 환경에 로컬 폰트가 하나도 없다(Apple SD Gothic Neo 조차).
+> 그래서 **코드로 만든 텍스트는 전부 Noto Sans KR 로 떨어진다.**
+>
+> **해결**: `V2 / …` 텍스트 스타일 13종을 만들어 뒀다. 앞으로 생성하는 텍스트는 이 스타일을 쓴다.
+> 사용자가 **스타일 9개의 폰트만** Pretendard 로 바꾸면 전부 따라온다 (Display 4종은 Anton, 변경 불필요).
+> 굵기도 함께 지정해야 한다 — Noto 에 SemiBold 가 없어 Bold 로 대체돼 있다.
+> 견본은 `02_BRAND` 페이지 `TYPE SCALE` 보드.
+
+**적용 현황 (2026-09-10, 새 파일 `wwn6VrLIgZENhkjshPGjy6`)**
+
+- `01_V1_CURRENT` 텍스트 109개 전부 행간 140% · 자간 −3% 로 맞췄다. Anton 29개만 예외대로 행간 100%.
+- 폰트는 **아직 Noto Sans KR·Inter·Anton 그대로**다. MCP 로 `loadFontAsync({family:'Pretendard'})` 를 호출하면
+  `The font "Pretendard Regular" could not be loaded. The font family "Pretendard" does not exist.` 가 난다.
+  대체 폰트로 바꾸지 않았다. 데스크톱 앱이나 Font Helper 로 Pretendard 가 잡히면 패밀리만 바꾸면 된다.
+- 앞으로 그리는 화면도 같은 값으로 시작한다. 한글 = Pretendard, 행간 140%, 자간 −3%, 숫자(Anton) 행간 100%.
 
 ### 6.2 Figma 를 또 만질 때 — 검증된 방법과 함정
 

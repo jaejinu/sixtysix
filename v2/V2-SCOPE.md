@@ -450,20 +450,41 @@ Anton 은 원래 극도로 좁은 서체다. 여기에 −3% 를 더 주면
 **화면당 30~40px 늘어난다.** 04단계 와이어프레임은 이 값을 반영해서 그린다.
 03단계에 만든 `01_V1_CURRENT` 프레임 높이와는 당연히 달라진다 — 박제이므로 고치지 않는다.
 
-### Figma 에서 Pretendard 를 쓰려면
+### Figma 에서의 Pretendard — 사람은 되고 코드는 안 된다
 
-지금 연결된 Figma 는 **Pretendard 를 못 본다.** 로컬에 9종이 설치돼 있는데도 그렇다.
-브라우저판 Figma 라서 시스템 폰트에 접근하지 못하기 때문이다
-(폰트 목록 1938종이 잡히지만 전부 Google Fonts 계열이다).
+**Figma UI 에서는 Pretendard 가 정상적으로 선택된다.** 로컬에 9종이 설치돼 있다.
 
-둘 중 하나가 필요하다.
+문제는 **코드로 만들 때**다. AI 가 붙는 플러그인 실행 환경에는 로컬 폰트가 하나도 없다 —
+`Apple SD Gothic Neo` 조차 없고, `loadFontAsync({family:'Pretendard'})` 는 전부 실패한다.
+잡히는 1938종은 전부 Google Fonts 계열이다.
 
-1. **Figma 데스크톱 앱**으로 파일을 연다 — 설치된 로컬 폰트를 바로 인식한다
-2. 브라우저를 계속 쓴다면 **Figma Font Helper** 를 설치하고 실행해 둔다
+그래서 **코드로 생성한 텍스트는 무조건 Noto Sans KR 로 떨어진다.**
 
-그 전까지 Figma 안의 한글은 **Noto Sans KR** 대체 상태다.
-Pretendard 의 실제 폰트 스택이 `"Pretendard", …, "Noto Sans KR", sans-serif` 이므로
-대체 폰트 자체는 맞지만, 자소 폭과 굵기가 달라 **행간·자간을 여기서 확정하면 안 된다.**
+**해결 — 텍스트 스타일로 한 겹 씌운다.**
+
+`V2 / …` 이름으로 텍스트 스타일 13종을 만들어 뒀다 (Figma 파일 로컬 스타일).
+스타일의 폰트만 Pretendard 로 바꾸면 그 스타일을 쓰는 모든 텍스트가 따라온다.
+**노드 수백 개가 아니라 스타일 9개**만 손대면 된다 (Display 4종은 Anton 이라 그대로 둔다).
+
+| 스타일 | 목표 | 임시 대체 |
+|---|---|---|
+| `V2 / Display / Hero · Count · Stat · Inline` | Anton 96 · 64 · 36 · 26, 행간 100% | 그대로 (변경 불필요) |
+| `V2 / Title / Page` | Pretendard SemiBold 30 | Noto Bold |
+| `V2 / Title / Section` | Pretendard SemiBold 24 | Noto Bold |
+| `V2 / Title / Card` | Pretendard Medium 20 | Noto Medium |
+| `V2 / Body / Default` | Pretendard Regular 16 | Noto Regular |
+| `V2 / Body / Strong` | Pretendard Medium 16 | Noto Medium |
+| `V2 / Button / Label` | Pretendard SemiBold 16 | Noto Bold |
+| `V2 / Label / Default` | Pretendard Regular 14 | Noto Regular |
+| `V2 / Label / Strong` | Pretendard Medium 14 | Noto Medium |
+| `V2 / Meta` | Pretendard Regular 12 | Noto Regular |
+
+Noto Sans KR 에 SemiBold(600) 가 없어 지금은 Bold 로 대체돼 있다.
+Pretendard 로 바꿀 때 **굵기도 SemiBold 로** 함께 지정해야 한다.
+각 스타일의 description 에 목표값을 적어 뒀다.
+
+**`01_V1_CURRENT` 은 손대지 않는다.** 텍스트 노드가 666개에 41가지 조합이고,
+박제된 스냅샷이라 폰트를 맞춰도 얻는 게 없다. 대체 사실은 `v2/FIGMA-V1-TRANSFER.md` 에 기록돼 있다.
 
 ---
 
