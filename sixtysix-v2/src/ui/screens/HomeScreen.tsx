@@ -3,7 +3,6 @@ import { useApp } from '../../app/AppProvider';
 import { AppHeader } from '../components/AppHeader';
 import { DemoClockBar } from '../components/DemoClockBar';
 import { Num } from '../components/Num';
-import { DEMO_COHORT } from '../../app/catalog';
 import { getProgress, getMemberState } from '../../domain/selectors/progress';
 import { getCohortParticipation } from '../../domain/selectors/ranking';
 import { getCheckins } from '../../domain/selectors/checkin';
@@ -20,7 +19,7 @@ const COPY: Record<string, { title: string; desc: string; cta: string; badge: st
 };
 
 export function HomeScreen() {
-  const { world, ctx, myMembershipId, today, now } = useApp();
+  const { world, ctx, myMembershipId, today, now, cohort } = useApp();
   const nav = useNavigate();
   const facts = world.facts;
 
@@ -28,9 +27,9 @@ export function HomeScreen() {
   const state = getMemberState(facts, myMembershipId, ctx);
   const copy = COPY[state] ?? COPY.ongoing!;
   const habit = getHabitOf(facts, myMembershipId);
-  const cohortName = getCohortName(facts, DEMO_COHORT);
+  const cohortName = getCohortName(facts, cohort);
 
-  const part = getCohortParticipation(facts, DEMO_COHORT, today, now);
+  const part = getCohortParticipation(facts, cohort, today, now);
   const percent = part.total > 0 ? Math.round((part.done / part.total) * 100) : 0;
 
   const todayCheckins = facts.checkins
@@ -56,7 +55,7 @@ export function HomeScreen() {
           <div className="hero__body">
             <p className="hero__day">
               <Num size={64}>D+{today}</Num>
-              <span className="hero__unit">/ {DEMO_COHORT.durationDays}일</span>
+              <span className="hero__unit">/ {cohort.durationDays}일</span>
             </p>
             <h2 className="hero__title">{copy.title}</h2>
             <p className="hero__desc">{copy.desc}</p>

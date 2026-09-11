@@ -1,5 +1,5 @@
 /** 습관 6종과 코호트. V1 data.js 를 옮기되 형태는 Gate 1 타입을 따른다. */
-import type { Habit, Cohort } from '../domain/types';
+import type { Habit, Cohort, HabitId } from '../domain/types';
 
 export const HABITS: readonly Habit[] = [
   { id: 'h-reading', name: '독서 15분',      shortName: '독서',   goal: '하루 15분 읽기',   imageRef: 'habit-reading',  timeOfDay: 'evening' },
@@ -10,16 +10,33 @@ export const HABITS: readonly Habit[] = [
   { id: 'h-stretch', name: '아침 스트레칭',  shortName: '스트레칭', goal: '하루 10분',      imageRef: 'habit-stretch',  timeOfDay: 'morning' },
 ];
 
-/** 데모 기준 코호트. 2026-08-17 시작 · 66일 · 30명. */
-export const DEMO_COHORT: Cohort = {
-  id: 'c-reading-0817',
-  habitId: 'h-reading',
-  generation: '9월 2기',
-  startDate: '2026-08-17',
-  durationDays: 66,
-  capacity: 30,
-  policyVersion: 1,
-};
+export const COHORT_START = '2026-08-17';
+
+/**
+ * 습관마다 코호트가 하나씩 있다.
+ *
+ * V1 버그 1 — 온보딩에서 「아침 러닝」을 골라도 cohortId 는 독서 코호트로 남았다.
+ * 그래서 Membership 에 habitId 를 두지 않고 cohort.habitId 로만 파생한다.
+ * 화면도 코호트를 상수로 들고 있으면 안 된다. useApp().cohort 로 받는다.
+ */
+export function cohortFor(habitId: HabitId, startDate: string = COHORT_START): Cohort {
+  const short = habitId.replace(/^h-/, '');
+  const tag = startDate.slice(5).replace('-', '');
+  return {
+    id: `c-${short}-${tag}`,
+    habitId,
+    generation: '9월 2기',
+    startDate,
+    durationDays: 66,
+    capacity: 30,
+    policyVersion: 1,
+  };
+}
+
+export const DEFAULT_HABIT_ID: HabitId = 'h-reading';
+
+/** 데모 기준 코호트. 시드가 이 코호트를 전제한다. */
+export const DEMO_COHORT: Cohort = cohortFor(DEFAULT_HABIT_ID);
 
 export const PHOTO_REFS = [
   'habit-reading', 'habit-journal', 'habit-english', 'habit-water', 'habit-stretch',

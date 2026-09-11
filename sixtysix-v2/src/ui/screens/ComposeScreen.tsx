@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../app/AppProvider';
 import { Num } from '../components/Num';
-import { DEMO_COHORT } from '../../app/catalog';
 import { getDeadline, getLateWindowEnd, resolveCheckinTarget } from '../../domain/selectors/time';
 import { getFilledDays } from '../../domain/selectors/progress';
 import { SERVICE_TIME_ZONE, zonedParts } from '../../infrastructure/timezone';
@@ -19,7 +18,7 @@ function hhmm(ms: number): string {
 }
 
 export function ComposeScreen() {
-  const { world, myMembershipId, today, now, addCheckin, state } = useApp();
+  const { world, myMembershipId, today, now, addCheckin, state, cohort } = useApp();
   const nav = useNavigate();
 
   const [text, setText] = useState('');
@@ -27,11 +26,11 @@ export function ComposeScreen() {
   const [visibility, setVisibility] = useState<Visibility>(state.defaultVisibility);
 
   const filled = getFilledDays(world.facts, myMembershipId, today);
-  const target = resolveCheckinTarget(now, DEMO_COHORT, filled);
+  const target = resolveCheckinTarget(now, cohort, filled);
 
   // 마감까지 남은 시간. P1-B — V1 은 04:00 마감을 문서에만 적어 두고 화면에 없었다.
-  const deadline = getDeadline(DEMO_COHORT, target.cohortDay);
-  const lateEnd = getLateWindowEnd(DEMO_COHORT, target.cohortDay);
+  const deadline = getDeadline(cohort, target.cohortDay);
+  const lateEnd = getLateWindowEnd(cohort, target.cohortDay);
   const inLateWindow = target.late;
   const until = (inLateWindow ? lateEnd : deadline).getTime() - now.getTime();
   const window = (inLateWindow ? lateEnd.getTime() - deadline.getTime() : 24 * 3600_000);

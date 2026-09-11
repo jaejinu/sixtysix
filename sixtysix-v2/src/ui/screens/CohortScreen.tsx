@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useApp } from '../../app/AppProvider';
 import { AppHeader } from '../components/AppHeader';
 import { Num } from '../components/Num';
-import { DEMO_COHORT } from '../../app/catalog';
 import { getCohortParticipation, getRanking } from '../../domain/selectors/ranking';
 import { getMemberState } from '../../domain/selectors/progress';
 import { getCohortName } from '../../domain/selectors/membership';
@@ -16,17 +15,17 @@ const STATE_CLASS: Record<string, string> = {
 };
 
 export function CohortScreen() {
-  const { world, myMembershipId, today, now } = useApp();
+  const { world, myMembershipId, today, now, cohort } = useApp();
   const facts = world.facts;
   const [seg, setSeg] = useState<Seg>('today');
 
-  const part = getCohortParticipation(facts, DEMO_COHORT, today, now);
+  const part = getCohortParticipation(facts, cohort, today, now);
   const percent = part.total > 0 ? Math.round((part.done / part.total) * 100) : 0;
-  const ranking = getRanking(facts, DEMO_COHORT, now);
-  const ctx = { now, cohort: DEMO_COHORT };
+  const ranking = getRanking(facts, cohort, now);
+  const ctx = { now, cohort: cohort };
 
   const cells = facts.memberships
-    .filter((m) => m.cohortId === DEMO_COHORT.id)
+    .filter((m) => m.cohortId === cohort.id)
     .map((m) => {
       const checkin = facts.checkins.find((c) => c.membershipId === m.id && c.cohortDay === today);
       const st: MemberState = getMemberState(facts, m.id, ctx);
@@ -45,7 +44,7 @@ export function CohortScreen() {
 
   return (
     <>
-      <AppHeader title="코호트" sub={`${getCohortName(facts, DEMO_COHORT)} · ${part.total}명`} />
+      <AppHeader title="코호트" sub={`${getCohortName(facts, cohort)} · ${part.total}명`} />
       <main className="screen">
         <h1 className="sr-only">코호트</h1>
 

@@ -3,19 +3,18 @@ import { useApp } from '../../app/AppProvider';
 import { AppHeader } from '../components/AppHeader';
 import { Num } from '../components/Num';
 import { ProgressBoard, LEGEND } from '../components/ProgressBoard';
-import { DEMO_COHORT } from '../../app/catalog';
 import { getProgress, getDayStatus, getFilledDays } from '../../domain/selectors/progress';
 import { getCheckinByDay, getCheckinKind } from '../../domain/selectors/checkin';
 import { policyFor } from '../../domain/policies';
 
 export function RecordScreen() {
-  const { world, ctx, myMembershipId, today } = useApp();
+  const { world, ctx, myMembershipId, today, cohort } = useApp();
   const facts = world.facts;
   const [selected, setSelected] = useState<number | null>(null);
 
   const progress = getProgress(facts, myMembershipId, ctx);
   const filled = getFilledDays(facts, myMembershipId, today);
-  const policy = policyFor(DEMO_COHORT.policyVersion);
+  const policy = policyFor(cohort.policyVersion);
 
   // 진행판에서 고른 날짜로 목록을 움직인다 (P2-F)
   const itemRefs = useRef(new Map<number, HTMLLIElement>());
@@ -37,7 +36,7 @@ export function RecordScreen() {
             facts={facts}
             membershipId={myMembershipId}
             ctx={ctx}
-            totalDays={DEMO_COHORT.durationDays}
+            totalDays={cohort.durationDays}
             selectedDay={selected}
             onSelect={setSelected}
           />
@@ -77,7 +76,7 @@ export function RecordScreen() {
             {days.map((day) => {
               const st = getDayStatus(day, facts, myMembershipId, ctx);
               const c = getCheckinByDay(facts, myMembershipId, day);
-              const kind = c ? getCheckinKind(c, DEMO_COHORT, filled) : null;
+              const kind = c ? getCheckinKind(c, cohort, filled) : null;
               const on = selected === day;
               return (
                 <li

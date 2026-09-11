@@ -18,7 +18,7 @@ import { SERVICE_TIME_ZONE, epochForZonedTime } from '../../infrastructure/timez
 const NOW = new Date(epochForZonedTime(2026, 9, 8, 9, 0, SERVICE_TIME_ZONE));
 
 describe('데모 시드', () => {
-  const world = buildWorld(NOW, buildDemoSeed());
+  const world = buildWorld(NOW, buildDemoSeed(), DEMO_COHORT);
   const ctx = makeCtx(world.facts, MY_MEMBERSHIP_ID, NOW);
 
   it('오늘은 23일차다', () => {
