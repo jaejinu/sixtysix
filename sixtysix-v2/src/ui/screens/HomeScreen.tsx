@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../../app/AppProvider';
 import { AppHeader } from '../components/AppHeader';
 import { DemoClockBar } from '../components/DemoClockBar';
@@ -20,7 +20,8 @@ const COPY: Record<string, { title: string; desc: string; cta: string; badge: st
 };
 
 export function HomeScreen() {
-  const { world, ctx, myMembershipId, today, now, addCheckin } = useApp();
+  const { world, ctx, myMembershipId, today, now } = useApp();
+  const nav = useNavigate();
   const facts = world.facts;
 
   const progress = getProgress(facts, myMembershipId, ctx);
@@ -71,7 +72,7 @@ export function HomeScreen() {
           type="button"
           className="btn btn--primary btn--block"
           disabled={mineToday}
-          onClick={() => addCheckin({ text: '오늘도 15분 읽었다', visibility: 'cohort' })}
+          onClick={() => nav(state === 'done' ? '/cohort' : '/checkin')}
         >
           {mineToday ? '오늘 인증 완료' : copy.cta}
         </button>
