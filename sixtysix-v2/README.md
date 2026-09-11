@@ -1,6 +1,54 @@
-# 육십육 V2 — 도메인
+# 육십육 V2
 
-`v2/V2-SCOPE.md` 결정 3의 Gate 1 구현이다.
+`v2/V2-SCOPE.md` 결정 3의 Gate 1~3 위에 React 화면을 올린 것이다.
+
+```
+src/domain/         Gate 1 — 타입 · 정책 · 셀렉터 · 불변식     (순수 함수, now 를 인자로 받는다)
+src/simulator/      Gate 2 — 29명 코호트 결정론적 생성
+src/infrastructure/ Gate 3 — Clock · 시간대 · 저장소 경계
+src/app/            세계 구성 · 상태 · 데모 시드
+src/ui/             화면 · 컴포넌트 · 디자인 토큰
+```
+
+## 실행
+
+```bash
+npm run dev        # http://localhost:5173
+npm test           # 126개
+npm run typecheck
+npm run build
+```
+
+## 지금 되는 것
+
+| | |
+|---|---|
+| 홈 | 상태 6종 · Hero · 코호트 현황(계산값) · 오늘의 인증 레일 |
+| 코호트 | 오늘 / 피드 / 멤버 30명 · AvatarGrid |
+| 데모 시계 | ±1일 이동. 상태·코호트·연속이 전부 따라 바뀐다 |
+| 인증 | 남기면 즉시 피드 최상단에 뜨고 코호트 수가 오른다 |
+
+아직 없는 화면: 기록 · 인증 작성(전용) · 마이 · 졸업 · 온보딩 · 탐색.
+
+## V1 이 못 하던 것을 어디서 푸는가
+
+| 진단 | 어디서 |
+|---|---|
+| P1-A 내 인증이 피드에 없다 | `HomeScreen` · `CohortScreen` 이 `facts.checkins` 하나만 읽는다 |
+| P1-B 시간이 흐르지 않는다 | `DemoClockBar` + `AppProvider` 의 Clock |
+| P1-C 코호트가 살아 있지 않다 | `buildWorld` 가 매 렌더 `now` 까지만 시뮬레이션한다 |
+| P2-D 온보딩 직후 D+23 | `demoSeed` 를 「둘러보기」로 분리. `startFresh()` 가 0일차 |
+| 랭킹이 나만 유리 | `getRanking` 이 모두를 `checkins` 로 센다 |
+
+## 데모 시드
+
+첫 실행은 **진행 중인 상태**로 연다 — `D+23 · 인증 20 · 면제권 1 · 연속 9`.
+`V1_D23_BASELINE` 과 같은 수치이고, `src/app/__tests__/demoSeed.test.ts` 가 그것을 검사한다.
+
+**화면의 첫 인상이 도메인 인수 기준과 어긋나면 안 된다.**
+「표시는 맞는데 데이터가 틀린」 V1 의 실패가 되풀이되는 지점이 정확히 거기다.
+
+---
 
 ## Gate 1 의 범위
 

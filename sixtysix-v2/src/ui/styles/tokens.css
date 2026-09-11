@@ -1,0 +1,111 @@
+/* 육십육 V2 — 디자인 토큰
+   V1 tokens.css 를 옮기고 타이포만 결정 7 에 맞춰 바꿨다.
+   (Pretendard · 행간 140% · 자간 -3%, 단 Anton 숫자는 행간 100%)
+   여기 없는 값을 컴포넌트에서 새로 만들지 않는다. */
+
+:root {
+  /* ── 배경 ─────────────────────────────────────────── */
+  --color-bg-app: #fbf8f2;
+  --color-bg-app-deep: #f3efe7;
+  --color-bg-surface: #ffffff;
+  --color-bg-surface-subtle: #f1eee8;
+  --color-bg-overlay: rgba(0, 0, 0, 0.42);
+  --color-bg-floating: rgba(26, 26, 26, 0.88);
+
+  /* ── 대표 컬러 ────────────────────────────────────── */
+  --color-brand-primary: #f04e2c;
+  --color-brand-pressed: #c63a1e;
+  --color-brand-text: #c63a1e;
+  --color-brand-foreground: #1a1a1a;
+  --color-brand-soft: #fdeee9;
+
+  /* ── 액센트 (완료·복귀 전용) ──────────────────────── */
+  --color-accent: #1f6f5f;
+  --color-accent-pressed: #185446;
+  --color-accent-soft: #e8f0ee;
+
+  /* ── 텍스트 ───────────────────────────────────────── */
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #4a4a4a;
+  --color-text-muted: #6e6e6e;
+  --color-text-disabled: #9a9a9a;
+  --color-text-white: #ffffff;
+  --color-text-on-brand: #1a1a1a;
+  --color-text-on-accent: #ffffff;
+
+  /* ── 테두리 ───────────────────────────────────────── */
+  --color-border-default: #e4e0d8;
+  --color-border-strong: #cfcabf;
+  --color-border-subtle: rgba(26, 26, 26, 0.08);
+  --color-border-inverse: rgba(255, 255, 255, 0.24);
+
+  /* ── 의미 색 ──────────────────────────────────────── */
+  --color-success: #1f6f5f;
+  --color-warning: #ffcc00;
+  --color-danger: #b3261e;
+  --color-focus-ring: #c63a1e;
+
+  /* ── 글꼴 ─────────────────────────────────────────── */
+  --font-family-ui: "Pretendard Variable", "Pretendard", -apple-system,
+    BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  --font-family-display: "Anton", "Arial Narrow", sans-serif;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --font-size-display-hero: 96px;
+  --font-size-display-count: 64px;
+  --font-size-display-stat: 36px;
+  --font-size-stat: 26px;
+  --font-size-page-title: 30px;
+  --font-size-section-title: 24px;
+  --font-size-card-title: 20px;
+  --font-size-body: 16px;
+  --font-size-label: 14px;
+  --font-size-meta: 12px;
+
+  /* V2 결정 7 — 읽는 텍스트는 140%, 숫자(Anton)는 100% */
+  --line-height-text: 1.4;
+  --line-height-display: 1;
+  --letter-spacing-default: -0.03em;
+
+  /* ── 간격 ─────────────────────────────────────────── */
+  --space-1: 2px;  --space-2: 4px;  --space-3: 6px;  --space-4: 8px;
+  --space-5: 10px; --space-6: 12px; --space-7: 14px; --space-8: 16px;
+  --space-9: 18px; --space-10: 20px; --space-12: 24px; --space-16: 32px;
+  --space-24: 48px;
+
+  --space-page-x: 18px;
+  --space-section-y: 32px;
+  --space-slider-gap: 12px;
+
+  /* ── 라운드 ───────────────────────────────────────── */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-card: 16px;
+  --radius-media: 20px;
+  --radius-modal: 24px;
+  --radius-control: 50px;
+  --radius-pill: 999px;
+
+  /* ── 모션 ─────────────────────────────────────────── */
+  --duration-fast: 120ms;
+  --duration-base: 220ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  /* ── 레이아웃 ─────────────────────────────────────── */
+  --shell-max: 430px;
+  --content-max: 394px;
+  --appheader-h: 50px;
+  --bottomnav-h: 68px;
+  --stickybar-h: 84px;
+}
+
+@media (max-width: 389px) { :root { --space-page-x: 16px; } }
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --duration-fast: 1ms; --duration-base: 1ms; }
+}

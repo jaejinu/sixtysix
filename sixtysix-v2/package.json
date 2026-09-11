@@ -2,15 +2,27 @@
   "name": "sixtysix-v2",
   "private": true,
   "type": "module",
-  "description": "육십육 V2. Gate 1 은 도메인만 다룬다. React·Clock·Simulator 는 아직 없다.",
+  "description": "육십육 V2. 도메인·시뮬레이터·Clock 위에 React 화면을 올린다.",
   "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/node": "^22.20.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^4.7.0",
     "typescript": "^5.7.2",
+    "vite": "^5.4.21",
     "vitest": "^2.1.8"
+  },
+  "dependencies": {
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-router-dom": "^7.18.3"
   }
 }
