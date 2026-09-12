@@ -13,6 +13,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { AppProvider } from '../../app/AppProvider';
 import { ComposeScreen } from '../screens/ComposeScreen';
 import { RecordScreen } from '../screens/RecordScreen';
+import { POLICY_V1 } from '../../domain/policies';
 
 function mount(ui: React.ReactNode, path = '/') {
   localStorage.clear();
@@ -28,13 +29,20 @@ describe('한 줄 카운터는 입력에서 파생된다', () => {
     mount(<ComposeScreen />);
     const input = screen.getByLabelText('오늘의 한 줄');
 
-    expect(screen.getByText('0 / 60')).toBeInTheDocument();
+    const max = POLICY_V1.textMaxLength;
+    expect(screen.getByText(`0 / ${max}`)).toBeInTheDocument();
 
     fireEvent.change(input, { target: { value: '오늘도 읽었다' } });
-    expect(screen.getByText('7 / 60')).toBeInTheDocument();
+    expect(screen.getByText(`7 / ${max}`)).toBeInTheDocument();
 
     fireEvent.change(input, { target: { value: '' } });
-    expect(screen.getByText('0 / 60')).toBeInTheDocument();
+    expect(screen.getByText(`0 / ${max}`)).toBeInTheDocument();
+  });
+
+  it('한 줄 길이 제한은 정책에서 온다 — 화면이 숫자를 따로 갖지 않는다', () => {
+    mount(<ComposeScreen />);
+    expect(screen.getByLabelText('오늘의 한 줄'))
+      .toHaveAttribute('maxlength', String(POLICY_V1.textMaxLength));
   });
 
   it('빈 입력으로는 인증을 남길 수 없다', () => {

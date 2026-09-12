@@ -4,10 +4,10 @@ import { useApp } from '../../app/AppProvider';
 import { Num } from '../components/Num';
 import { getDeadline, getLateWindowEnd, resolveCheckinTarget } from '../../domain/selectors/time';
 import { getFilledDays } from '../../domain/selectors/progress';
+import { policyFor } from '../../domain/policies';
 import { SERVICE_TIME_ZONE, zonedParts } from '../../infrastructure/timezone';
 import type { Visibility } from '../../domain/types';
 
-const MAX = 60;
 const PHOTOS = ['habit-reading', 'habit-journal', 'habit-english', 'habit-water', 'habit-stretch'];
 
 function hhmm(ms: number): string {
@@ -25,6 +25,8 @@ export function ComposeScreen() {
   const [photo, setPhoto] = useState<string | null>(null);
   const [visibility, setVisibility] = useState<Visibility>(state.defaultVisibility);
 
+  const policy = policyFor(cohort.policyVersion);
+  const max = policy.textMaxLength;   // 화면이 숫자를 따로 갖지 않는다
   const filled = getFilledDays(world.facts, myMembershipId, today);
   const target = resolveCheckinTarget(now, cohort, filled);
 
@@ -95,14 +97,14 @@ export function ComposeScreen() {
         <div className="oneline">
           <input
             type="text"
-            maxLength={MAX}
+            maxLength={max}
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="오늘 무엇을 했는지 한 줄로 남겨보세요"
             aria-label="오늘의 한 줄"
           />
           {/* 카운터는 입력 길이에서 파생한다. V1 은 0자인데 40 을 보여줬다 (§3.5) */}
-          <span className="oneline__count">{text.length} / {MAX}</span>
+          <span className="oneline__count">{text.length} / {max}</span>
         </div>
       </section>
 
