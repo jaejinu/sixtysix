@@ -9,7 +9,7 @@ import { SERVICE_TIME_ZONE, zonedParts } from '../../infrastructure/timezone';
 
 export function MyScreen() {
   const {
-    world, ctx, myMembershipId, isDemo, now,
+    world, ctx, myMembershipId, isDemo, now, today,
     state, setDefaultVisibility, setWorld, startFresh, startSeeded, advanceDemoDays, cohort } = useApp();
   const facts = world.facts;
   const nav = useNavigate();
@@ -119,7 +119,7 @@ export function MyScreen() {
             <div className="settings__card">
               <div className="row row--stack">
                 <span>
-                  <b>지금은 {state.checkins.length > 0 ? '진행 중인 상태' : '0일차'}로 보고 있어요</b>
+                  <b>지금은 {today}일차 · 인증 {progress.checkins}회로 보고 있어요</b>
                   <i>
                     온보딩을 마치면 그날이 1일차예요. 「둘러보기」는 데모 기준 코호트(독서 15분 · 8/17 시작)로
                     바꾸고 D+23 상태를 보여줍니다.

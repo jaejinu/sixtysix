@@ -6,17 +6,18 @@ import {
   STORAGE_KEYS, emptyWorld,
   type WorldId, type WorldMeta, type WorldState, type WorldRepository,
 } from './world.js';
+import { sanitizeMeta, sanitizeWorld } from './validate.js';
 
 const DEFAULT_META: WorldMeta = { schemaVersion: 1, activeWorld: 'demo', simulatorVersion: 1 };
 
-function read<T>(key: string, fallback: T): T {
+/** 형태는 모른다. 확인은 validate.ts 가 한다 */
+function read(key: string): unknown {
   try {
     const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw) as T;
+    return raw ? JSON.parse(raw) : undefined;
   } catch {
-    // 저장소가 막혀 있거나(사파리 비공개) 형식이 깨졌으면 기본값으로 간다.
-    return fallback;
+    // 저장소가 막혀 있거나(사파리 비공개) JSON 이 깨졌으면 없는 것으로 본다.
+    return undefined;
   }
 }
 
@@ -30,9 +31,7 @@ function write(key: string, value: unknown): void {
 
 export class LocalStorageWorldRepository implements WorldRepository {
   loadMeta(): WorldMeta {
-    const meta = read<WorldMeta>(STORAGE_KEYS.meta, DEFAULT_META);
-    if (meta.schemaVersion !== DEFAULT_META.schemaVersion) return DEFAULT_META;
-    return meta;
+    return sanitizeMeta(read(STORAGE_KEYS.meta), DEFAULT_META);
   }
 
   saveMeta(meta: WorldMeta): void {
@@ -40,7 +39,7 @@ export class LocalStorageWorldRepository implements WorldRepository {
   }
 
   load(world: WorldId): WorldState {
-    return read<WorldState>(STORAGE_KEYS[world], emptyWorld());
+    return sanitizeWorld(read(STORAGE_KEYS[world]));
   }
 
   save(world: WorldId, state: WorldState): void {

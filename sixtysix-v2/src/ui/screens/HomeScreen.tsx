@@ -5,7 +5,6 @@ import { DemoClockBar } from '../components/DemoClockBar';
 import { Num } from '../components/Num';
 import { getProgress, getMemberState } from '../../domain/selectors/progress';
 import { getCohortParticipation } from '../../domain/selectors/ranking';
-import { getCheckins } from '../../domain/selectors/checkin';
 import { getHabitOf, getCohortName } from '../../domain/selectors/membership';
 
 /** 상태별 문안. 정책 문장을 그대로 노출하지 않는다 (유지 목록). */
@@ -15,11 +14,11 @@ const COPY: Record<string, { title: string; desc: string; cta: string; badge: st
   done:    { title: '오늘 인증을 남겼어요',     desc: '내일 또 만나요.',                            cta: '코호트 피드 보기', badge: '인증 완료' },
   broken:  { title: '어제는 쉬었어요',          desc: '오늘 인증하면 다시 이어져요.',               cta: '오늘 인증 남기기', badge: '어제 미인증' },
   dormant: { title: '한동안 인증이 없었어요',   desc: '기록은 그대로 있어요. 오늘 한 번이면 다시 시작이에요.', cta: '복귀 인증하기', badge: '휴면' },
-  ended:   { title: '66일이 끝났어요',          desc: '기록을 돌아볼 시간이에요.',                  cta: '졸업 화면 보기', badge: '완주' },
+  ended:   { title: '66일이 끝났어요',          desc: '기록을 돌아볼 시간이에요.',                  cta: '66일 기록 보기', badge: '완주' },
 };
 
 export function HomeScreen() {
-  const { world, ctx, myMembershipId, today, now, cohort } = useApp();
+  const { world, ctx, myMembershipId, today, now, cohort, availability } = useApp();
   const nav = useNavigate();
   const facts = world.facts;
 
@@ -37,7 +36,16 @@ export function HomeScreen() {
     .slice()
     .sort((a, b) => (a.membershipId === myMembershipId ? -1 : b.membershipId === myMembershipId ? 1 : 0));
 
-  const mineToday = getCheckins(facts, myMembershipId, today).some((c) => c.cohortDay === today);
+  // 행동 버튼은 쓰기 경로와 같은 판정(availability)을 본다. 눌렀는데 막히는 버튼을 만들지 않는다.
+  // 이미 채운 날에 비활성 버튼을 두지 않고, 다음에 할 수 있는 일로 보낸다.
+  const action: { label: string; to: string | null } =
+    state === 'ended' || (!availability.ok && availability.reason === 'ended')
+      ? { label: copy.cta, to: '/record' }
+      : availability.ok
+        ? { label: state === 'done' ? '늦은 인증 남기기' : copy.cta, to: '/checkin' }
+        : availability.reason === 'filled'
+          ? { label: '코호트 피드 보기', to: '/cohort' }
+          : { label: '아직 시작 전이에요', to: null };
 
   return (
     <>
@@ -72,10 +80,10 @@ export function HomeScreen() {
           <button
             type="button"
             className="btn btn--primary btn--block"
-            disabled={mineToday}
-            onClick={() => nav(state === 'done' ? '/cohort' : '/checkin')}
+            disabled={action.to === null}
+            onClick={() => { if (action.to) nav(action.to); }}
           >
-            {mineToday ? '오늘 인증 완료' : copy.cta}
+            {action.label}
           </button>
         </div>
 

@@ -512,3 +512,8 @@ button.link { border: 0; background: transparent; padding: 0; }
   font-size: var(--font-size-meta); font-weight: var(--font-weight-bold);
 }
 .hitem.is-on .hitem__check { background: var(--color-brand-primary); border-color: var(--color-brand-primary); }
+
+/* ── 남길 수 없음 ─────────────────────────────────────── */
+.blocked { align-items: flex-start; }
+.blocked .btn { margin-top: var(--space-4); }
+.onboarding__back { display: flex; margin: 0 auto; }

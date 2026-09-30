@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../app/AppProvider';
 import { Num } from '../components/Num';
-import { getDeadline, getLateWindowEnd, resolveCheckinTarget } from '../../domain/selectors/time';
-import { getFilledDays } from '../../domain/selectors/progress';
+import { getDeadline, getLateWindowEnd, getDayDate } from '../../domain/selectors/time';
+import type { CheckinBlockReason } from '../../domain/selectors/time';
+import { getHabitOf } from '../../domain/selectors/membership';
 import { policyFor } from '../../domain/policies';
-import { SERVICE_TIME_ZONE, zonedParts } from '../../infrastructure/timezone';
-import type { Visibility } from '../../domain/types';
+import type { Visibility, Cohort } from '../../domain/types';
 
 const PHOTOS = ['habit-reading', 'habit-journal', 'habit-english', 'habit-water', 'habit-stretch'];
 
@@ -17,8 +17,29 @@ function hhmm(ms: number): string {
   return h > 0 ? `${h}시간 ${m}분` : `${m}분`;
 }
 
+/** 남길 수 없을 때의 안내. 버튼만 막으면 /checkin 직접 진입으로 새어 들어온다 */
+const BLOCKED: Record<CheckinBlockReason, {
+  title: string; desc: (c: Cohort, day: number) => string; cta: string; to: string;
+}> = {
+  filled: {
+    title: '이 날 인증은 이미 남겼어요',
+    desc: (_, day) => `${day}일차가 채워졌어요. 다음 인증은 새벽 4시 이후에 열려요.`,
+    cta: '코호트 피드 보기', to: '/cohort',
+  },
+  ended: {
+    title: '66일이 끝났어요',
+    desc: () => '더 남길 인증은 없어요. 기록에서 66일을 돌아볼 수 있어요.',
+    cta: '기록 보기', to: '/record',
+  },
+  before: {
+    title: '아직 시작 전이에요',
+    desc: (c) => { const d = getDayDate(c, 1); return `${d.month}월 ${d.day}일 새벽 4시에 1일차가 열려요.`; },
+    cta: '홈으로', to: '/home',
+  },
+};
+
 export function ComposeScreen() {
-  const { world, myMembershipId, today, now, addCheckin, state, cohort } = useApp();
+  const { world, myMembershipId, now, addCheckin, state, cohort, availability } = useApp();
   const nav = useNavigate();
 
   const [text, setText] = useState('');
@@ -27,8 +48,28 @@ export function ComposeScreen() {
 
   const policy = policyFor(cohort.policyVersion);
   const max = policy.textMaxLength;   // 화면이 숫자를 따로 갖지 않는다
-  const filled = getFilledDays(world.facts, myMembershipId, today);
-  const target = resolveCheckinTarget(now, cohort, filled);
+  const habit = getHabitOf(world.facts, myMembershipId);   // 내 코호트의 습관. 목록의 첫 번째가 아니다
+
+  if (!availability.ok) {
+    const b = BLOCKED[availability.reason];
+    return (
+      <main className="screen">
+        <h1 className="sr-only">오늘 인증 남기기</h1>
+        <header className="detail-header">
+          <button type="button" className="icon-btn" onClick={() => nav(-1)} aria-label="뒤로">←</button>
+          <p className="detail-header__title">오늘 인증</p>
+          <span className="icon-btn" aria-hidden="true" />
+        </header>
+        <section className="card blocked" role="status">
+          <h2 className="card__title">{b.title}</h2>
+          <p className="hero__desc">{b.desc(cohort, availability.cohortDay)}</p>
+          <button type="button" className="btn btn--ghost btn--block" onClick={() => nav(b.to)}>{b.cta}</button>
+        </section>
+      </main>
+    );
+  }
+
+  const target = availability;
 
   // 마감까지 남은 시간. P1-B — V1 은 04:00 마감을 문서에만 적어 두고 화면에 없었다.
   const deadline = getDeadline(cohort, target.cohortDay);
@@ -38,7 +79,8 @@ export function ComposeScreen() {
   const window = (inLateWindow ? lateEnd.getTime() - deadline.getTime() : 24 * 3600_000);
   const ratio = Math.max(0, Math.min(1, until / window));
 
-  const p = zonedParts(now.getTime(), SERVICE_TIME_ZONE);
+  // 날짜는 귀속 일차의 날짜다. 새벽 2시에 남기면 달력은 오늘이어도 인증은 어제 몫이다
+  const date = getDayDate(cohort, target.cohortDay);
 
   return (
     <main className="screen screen--bar">
@@ -52,7 +94,7 @@ export function ComposeScreen() {
 
       <p className="compose__day">
         <Num size="count">D+{target.cohortDay}</Num>
-        <span className="meta">{p.year}년 {p.month}월 {p.day}일 · {world.facts.habits[0]?.name}</span>
+        <span className="meta">{date.year}년 {date.month}월 {date.day}일 · {habit.name}</span>
       </p>
 
       {/* 마감까지 남은 시간 — 「오늘 안에」라는 긴장이 여기서 나온다 */}
@@ -131,8 +173,8 @@ export function ComposeScreen() {
           className="btn btn--primary btn--block"
           disabled={text.trim().length === 0}
           onClick={() => {
-            addCheckin({ text: text.trim(), visibility, ...(photo ? { photoRef: photo } : {}) });
-            nav('/home');
+            const r = addCheckin({ text, visibility, ...(photo ? { photoRef: photo } : {}) });
+            if (r.ok) nav('/home');
           }}
         >
           인증 남기기

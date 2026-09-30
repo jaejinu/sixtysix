@@ -1,22 +1,25 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../app/AppProvider';
-import { HABITS, COHORT_START } from '../../app/catalog';
+import { HABITS } from '../../app/catalog';
 import type { HabitId } from '../../domain/types';
 
 /**
  * P2-D — V1 은 온보딩을 마치면 곧바로 D+23 · 21일 기록이 있었고
  * 「데모는 23일차부터 시작해요」라는 문구로 얼버무렸다. 덮은 것이지 푼 게 아니다.
  *
- * 여기서는 온보딩을 마치면 **0일차**다.
+ * 여기서는 온보딩을 마친 **그날이 1일차**다. 안내 문구도 같은 값(joinDate)에서 나온다 —
+ * 화면이 「0일차」나 고정 시작일을 따로 말하면 실제 동작과 다시 어긋난다.
  * 진행 중인 상태는 마이 > 데모 > 시작 지점에서만 들어간다.
  */
 export function OnboardingScreen() {
-  const { completeOnboarding } = useApp();
+  const { completeOnboarding, joinDate, isDemo, setWorld } = useApp();
   const nav = useNavigate();
   const [picked, setPicked] = useState<HabitId | null>(null);
 
   const habit = HABITS.find((h) => h.id === picked);
+  const [, jm, jd] = joinDate.split('-').map(Number);
+  const startLabel = `${jm}월 ${jd}일`;
 
   return (
     <main className="screen onboarding">
@@ -57,7 +60,7 @@ export function OnboardingScreen() {
 
       <p className="sample-note">
         샘플 데이터로 만든 데모입니다. 실제 코호트 매칭과 알림은 동작하지 않아요.
-        {habit ? ` 「${habit.name}」 코호트는 ${COHORT_START}에 시작했어요.` : ''}
+        {habit ? ` 「${habit.name}」 코호트는 ${startLabel}에 시작해요.` : ''}
       </p>
 
       <div className="sticky-bar">
@@ -70,8 +73,14 @@ export function OnboardingScreen() {
           {habit ? `${habit.name}으로 시작하기` : '이 습관으로 시작하기'}
         </button>
         <p className="onboarding__foot-note">
-          0일차부터 시작해요. 진행 중인 상태는 마이 &gt; 데모에서 볼 수 있어요.
+          {startLabel}이 1일차예요. 진행 중인 상태는 마이 &gt; 데모에서 볼 수 있어요.
         </p>
+        {/* 실제 시간으로 바꿨다가 온보딩에 들어온 경우 — 여기서 갇히지 않게 */}
+        {!isDemo && (
+          <button type="button" className="link onboarding__back" onClick={() => setWorld('demo')}>
+            데모 시간으로 돌아가기
+          </button>
+        )}
       </div>
     </main>
   );
