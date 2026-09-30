@@ -10,6 +10,9 @@ body {
   line-height: var(--line-height-text);
   letter-spacing: var(--letter-spacing-default);
   -webkit-font-smoothing: antialiased;
+  /* 한글은 어절 단위로 줄을 바꾼다 — 「전 / 부 인증」 처럼 낱말이 쪼개지지 않게 */
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 /* Anton 은 숫자 전용. 행간 100% 를 여기서 한 번만 정한다.
@@ -20,9 +23,18 @@ body {
   line-height: var(--line-height-display);
   font-feature-settings: "tnum";
 }
+/* Anton 크기는 결정 7 표의 Display 단계만 쓴다 — 임의 px 를 넘기지 않는다 */
+.num--hero   { font-size: var(--font-size-display-hero); }
+.num--count  { font-size: var(--font-size-display-count); }
+.num--stat   { font-size: var(--font-size-display-stat); }
+.num--inline { font-size: var(--font-size-stat); }
+.num--list   { font-size: var(--font-size-display-list); }
 
 h1, h2, h3, p, figure, ul, ol { margin: 0; padding: 0; }
 ul, ol { list-style: none; }
+/* 브라우저 기본 bold(700) 가 새지 않게 — 강조는 SemiBold 까지 */
+b, strong { font-weight: var(--font-weight-semibold); }
+input::placeholder { color: var(--color-text-muted); }
 button { font: inherit; letter-spacing: inherit; color: inherit; cursor: pointer; }
 a { color: inherit; text-decoration: none; }
 img { display: block; max-width: 100%; }

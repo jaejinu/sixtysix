@@ -51,7 +51,7 @@ export function ComposeScreen() {
       </header>
 
       <p className="compose__day">
-        <Num size={64}>D+{target.cohortDay}</Num>
+        <Num size="count">D+{target.cohortDay}</Num>
         <span className="meta">{p.year}년 {p.month}월 {p.day}일 · {world.facts.habits[0]?.name}</span>
       </p>
 
@@ -72,10 +72,10 @@ export function ComposeScreen() {
         </p>
       </section>
 
-      <section className="section">
-        <h2 className="section__title">사진 고르기</h2>
+      <section className="field">
+        <h2 className="field__label">사진 고르기</h2>
         <p className="meta">고르지 않으면 간단 인증으로 남아요.</p>
-        <ul className="photo-grid">
+        <ul className="photo-grid field__control">
           {PHOTOS.map((ref) => (
             <li key={ref}>
               <button
@@ -92,8 +92,8 @@ export function ComposeScreen() {
         </ul>
       </section>
 
-      <section className="section">
-        <h2 className="section__title">한 줄 남기기</h2>
+      <section className="field">
+        <h2 className="field__label">한 줄 남기기</h2>
         <div className="oneline">
           <input
             type="text"
@@ -108,8 +108,8 @@ export function ComposeScreen() {
         </div>
       </section>
 
-      <section className="section">
-        <h2 className="section__title">공개 범위</h2>
+      <section className="field">
+        <h2 className="field__label">공개 범위</h2>
         <div className="scope">
           <span>
             <b>{visibility === 'cohort' ? '코호트에 공개' : '나만 보기'}</b>

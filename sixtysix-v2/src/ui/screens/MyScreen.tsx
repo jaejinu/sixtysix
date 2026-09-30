@@ -29,7 +29,7 @@ export function MyScreen() {
 
         <section className="profile">
           <img className="profile__avatar" src={`/images/${habit.imageRef}.webp`} alt="" width={64} height={64} />
-          <div>
+          <div className="profile__text">
             <p className="profile__name">재진</p>
             <p className="meta">{cohortName}<br />{habit.goal} · {cohort.startDate} 시작</p>
           </div>
@@ -37,9 +37,9 @@ export function MyScreen() {
 
         <section className="card">
           <div className="profile-stats">
-            <div><Num size={26}>{progress.filled}</Num><span>채운 날</span></div>
-            <div><Num size={26}>{progress.streak}</Num><span>현재 연속</span></div>
-            <div><Num size={26}>{earned.length}</Num><span>배지</span></div>
+            <div><Num size="inline">{progress.filled}</Num><span>채운 날</span></div>
+            <div><Num size="inline">{progress.streak}</Num><span>현재 연속</span></div>
+            <div><Num size="inline">{earned.length}</Num><span>배지</span></div>
           </div>
           <hr className="rule" />
           <p className="meta">66일 중 {progress.filled}일 완료 · {progress.percent}%</p>
@@ -64,7 +64,7 @@ export function MyScreen() {
           </ul>
         </section>
 
-        <section className="section">
+        <section className="section section--loose">
           <h2 className="section__title">설정</h2>
 
           <div className="settings">

@@ -60,7 +60,7 @@ export function CohortScreen() {
           <>
             <section className="card">
               <p className="figure">
-                <Num size={36}>{part.done}</Num>
+                <Num size="stat">{part.done}</Num>
                 <span className="figure__label">/ {part.total}명이 오늘 인증했어요</span>
               </p>
               <div className="bar" role="img" aria-label={`${percent}퍼센트`}>
@@ -83,12 +83,24 @@ export function CohortScreen() {
                   </li>
                 ))}
               </ul>
+              <ul className="legend">
+                <li className="legend__item"><span className="avatar is-done legend__swatch" aria-hidden="true" />오늘 인증</li>
+                <li className="legend__item"><span className="avatar legend__swatch" aria-hidden="true" />아직</li>
+                <li className="legend__item"><span className="avatar is-dormant legend__swatch" aria-hidden="true" />휴면</li>
+                <li className="legend__item"><span className="avatar is-me legend__swatch" aria-hidden="true" />나</li>
+              </ul>
             </section>
 
             {me && (
               <section className="card card--mine">
-                <p className="card__title">나 — {me.rank}위</p>
-                <p className="meta">{me.checkins}일 인증 · 연속 {me.streak}일</p>
+                <div className="card__head">
+                  <h2 className="card__title">내 자리</h2>
+                  <button type="button" className="link" onClick={() => setSeg('members')}>멤버 보기 →</button>
+                </div>
+                <p className="figure">
+                  <Num size="stat">{me.rank}</Num>
+                  <span className="figure__label">위 · {me.checkins}일 인증 · 연속 {me.streak}일</span>
+                </p>
               </section>
             )}
           </>
@@ -100,8 +112,9 @@ export function CohortScreen() {
             {feed.map((c) => (
               <li key={c.id} className="post">
                 <div className="post__head">
-                  <b>{world.nameByMembership.get(c.membershipId) ?? '멤버'}</b>
+                  <b className="post__name">{world.nameByMembership.get(c.membershipId) ?? '멤버'}</b>
                   {c.membershipId === myMembershipId && <span className="badge badge--me">나</span>}
+                  <span className="meta">D+{c.cohortDay}</span>
                 </div>
                 <p className="post__text">{c.text}</p>
                 {c.photoRef && <img className="post__img" src={`/images/${c.photoRef}.webp`} alt="" loading="lazy" />}
@@ -117,7 +130,7 @@ export function CohortScreen() {
                 <span className="rank__no">{r.rank}</span>
                 <span className="rank__name">{world.nameByMembership.get(r.membershipId) ?? '멤버'}</span>
                 <span className="rank__meta">연속 {r.streak}일</span>
-                <span className="rank__value"><Num size={18}>{r.checkins}</Num>일</span>
+                <span className="rank__value"><Num size="list">{r.checkins}</Num>일</span>
               </li>
             ))}
           </ul>

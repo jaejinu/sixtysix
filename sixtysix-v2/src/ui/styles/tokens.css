@@ -39,6 +39,11 @@
   --color-border-subtle: rgba(26, 26, 26, 0.08);
   --color-border-inverse: rgba(255, 255, 255, 0.24);
 
+  /* ── 어두운 면 위 ─────────────────────────────────── */
+  --color-nav-inactive: #8f8a83;      /* #1A1A1A 위 5.4:1 */
+  --color-avatar-dormant: #efece6;
+  --shadow-raised: 0 1px 3px rgba(0, 0, 0, 0.06);
+
   /* ── 의미 색 ──────────────────────────────────────── */
   --color-success: #1f6f5f;
   --color-warning: #ffcc00;
@@ -59,6 +64,7 @@
   --font-size-display-count: 64px;
   --font-size-display-stat: 36px;
   --font-size-stat: 26px;
+  --font-size-display-list: 20px;   /* 목록 안 숫자 (V1 .num--sm 과 같은 값) */
   --font-size-page-title: 30px;
   --font-size-section-title: 24px;
   --font-size-card-title: 20px;
@@ -81,12 +87,23 @@
   --space-section-y: 32px;
   --space-slider-gap: 12px;
 
+  /* 간격 리듬 — 세 단계만 쓴다
+     화면 안 블록 사이 24 · 블록 안 요소 사이 12 · 한 덩어리(제목+설명) 안 4~8 */
+  --space-block: 24px;
+  --space-inner: 12px;
+
+  /* 면 안쪽 여백 — 큰 면 20 · 목록·타일 16 */
+  --space-surface: 20px;
+  --space-surface-sm: 16px;
+
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
   /* ── 라운드 ───────────────────────────────────────── */
   --radius-xs: 4px;
   --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-card: 16px;
-  --radius-media: 20px;
+  --radius-md: 12px;      /* 입력 · 안내 · 목록 행 */
+  --radius-card: 16px;    /* 타일 · 목록 카드 */
+  --radius-media: 20px;   /* 큰 면 (Hero · 카드 · 설정 묶음) */
   --radius-modal: 24px;
   --radius-control: 50px;
   --radius-pill: 999px;

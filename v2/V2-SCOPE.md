@@ -469,6 +469,7 @@ Anton 은 원래 극도로 좁은 서체다. 여기에 −3% 를 더 주면
 | 스타일 | 목표 | 임시 대체 |
 |---|---|---|
 | `V2 / Display / Hero · Count · Stat · Inline` | Anton 96 · 64 · 36 · 26, 행간 100% | 그대로 (변경 불필요) |
+| `Display / List` (코드 전용, 2026-09-30 추가) | Anton 20, 행간 100% — 목록 행 안 숫자. V1 `.num--sm` 과 같은 값 | Figma 스타일 없음 |
 | `V2 / Title / Page` | Pretendard SemiBold 30 | Noto Bold |
 | `V2 / Title / Section` | Pretendard SemiBold 24 | Noto Bold |
 | `V2 / Title / Card` | Pretendard Medium 20 | Noto Medium |

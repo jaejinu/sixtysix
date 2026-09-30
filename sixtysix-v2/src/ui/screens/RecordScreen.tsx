@@ -56,16 +56,16 @@ export function RecordScreen() {
         <section className="stat-row">
           <div className="stat">
             <span className="stat__label">현재 연속</span>
-            <span className="stat__value"><Num size={26}>{progress.streak}</Num>일</span>
+            <span className="stat__value"><Num size="inline">{progress.streak}</Num>일</span>
           </div>
           <div className="stat">
             <span className="stat__label">채운 날</span>
-            <span className="stat__value"><Num size={26}>{progress.filled}</Num>일</span>
+            <span className="stat__value"><Num size="inline">{progress.filled}</Num>일</span>
             <span className="stat__sub">인증 {progress.checkins} · 면제권 {progress.passes}</span>
           </div>
           <div className="stat">
             <span className="stat__label">남은 면제권</span>
-            <span className="stat__value"><Num size={26}>{progress.passesLeft}</Num>회</span>
+            <span className="stat__value"><Num size="inline">{progress.passesLeft}</Num>회</span>
             <span className="stat__sub">{policy.passLimit}회 중</span>
           </div>
         </section>
@@ -86,7 +86,7 @@ export function RecordScreen() {
                   onClick={() => setSelected(day)}
                 >
                   <span className="record__day">
-                    <Num size={20}>{day}</Num>
+                    <Num size="list">{day}</Num>
                     <i>일차</i>
                   </span>
                   <span className="record__body">

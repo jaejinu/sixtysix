@@ -26,9 +26,11 @@ export function OnboardingScreen() {
         <img src="/images/hero-morning-desk.webp" alt="" />
       </div>
 
-      <p className="onboarding__eyebrow">66일 습관 챌린지</p>
-      <h2 className="onboarding__title">어떤 습관을 66일 동안 이어볼까요?</h2>
-      <p className="onboarding__desc">하나만 고르면 같은 날 시작하는 30명 코호트에 들어갑니다.</p>
+      <div className="onboarding__intro">
+        <p className="onboarding__eyebrow">66일 습관 챌린지</p>
+        <h2 className="onboarding__title">어떤 습관을 66일 동안 이어볼까요?</h2>
+        <p className="onboarding__desc">하나만 고르면 같은 날 시작하는 30명 코호트에 들어갑니다.</p>
+      </div>
 
       <ul className="habit-list">
         {HABITS.map((h) => {
