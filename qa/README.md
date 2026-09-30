@@ -3,6 +3,8 @@
 `../sixtysix` 를 로컬 서버로 띄우고 Playwright 로 검증합니다.
 배포 대상 폴더 **바깥**에 두어 Vercel 정적 배포가 `package.json` 을 집어들지 않게 했습니다.
 
+현재 등록 테스트는 210개입니다(2026-09-30 `npm test -- --list` 확인). V1 전용이며 V2를 검사하지 않습니다.
+
 ## 실행
 
 ```bash
@@ -21,6 +23,7 @@ npm run report              # HTML 리포트 열기
 | 파일 | 검증 내용 |
 |---|---|
 | `tests/flows.spec.js` | `sixtysix-project.md` 15.7 자동 검증 시나리오 1~8, 10 |
+| `tests/state.spec.js` | 습관·코호트 배정, 참여, 랭킹 기준, 공개 범위 등 저장 상태 정합성 |
 | `tests/layout.spec.js` | 12화면 구조·접근성·수평 스크롤, 앱 셸 폭, 고정 UI 겹침, 탭 활성, 에셋 연결, 색상 토큰 |
 | `tests/assets.spec.js` | 생성 이미지 10장의 존재와 정상 렌더 |
 | `tests/visual.spec.js` | 390 · 430px 스크린샷 회귀 (이미지가 있을 때만 실행) |
