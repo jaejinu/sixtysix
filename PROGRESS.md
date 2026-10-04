@@ -1,7 +1,7 @@
 # 진행 현황 — 육십육 (SIXTYSIX)
 
 > 무엇을 했고, 무엇을 하는 중이고, 무엇이 남았는가를 한 문서에 모은다.
-> 최종 갱신: 2026-10-05 · 기준 커밋 `b7988a0`
+> 최종 갱신: 2026-10-05 · 기준 커밋 `65aa8c7`
 >
 > 결정의 근거는 [`v2/V2-SCOPE.md`](v2/V2-SCOPE.md), 작업 방법과 함정은 [`HANDOFF.md`](HANDOFF.md) 에 있다.
 > 이 문서는 **상태**만 다룬다. 충돌하면 V2-SCOPE 를 따른다.
@@ -15,9 +15,9 @@
 | 무엇 | 같은 날 시작한 30명 코호트와 하나의 습관을 66일 동안 매일 인증하고 완주하는 모바일 웹 |
 | 지금 단계 | 강의 `beginner-mvp-v2` **08단계 (React 구현)** 후반 |
 | V1 | 완료 · **동결** (`v1.1` 태그). 비교 기준점이다. 고치지 않는다 |
-| V2 | 11화면 중 **6화면 동작**. 테스트 169개 통과. **아직 배포 안 됨** |
-| 진행 중 | V2 전용 Vercel 프로젝트 연결 (프로젝트 생성까지 됨, Git 연결 남음) |
-| 다음 | Vercel 연결 마무리 → 남은 5화면 → 06·07단계 점검 → 09 QA·배포 |
+| V2 | 11화면 중 **6화면 동작**. 테스트 169개 통과. **미리보기 배포** https://sixtysix-v2.vercel.app |
+| 진행 중 | 없음 |
+| 다음 | 남은 5화면 → 06·07단계 점검 → V2 브라우저 테스트 → 09 QA·정식 공개 |
 
 ```
 01 V1 진단 ✅ → 02 V2 범위 ✅ → Gate 1·2·3 ✅ → 03 Figma 이전 ✅ → 04 와이어프레임 ✅
@@ -53,11 +53,11 @@ V1 은 코호트가 「18명 + 내가 했나」 하드코딩이라 살아 있지
 | | |
 |---|---|
 | 라이브 (V1.1) | https://sixtysix-taupe.vercel.app |
-| 라이브 (V2) | 없음 — 4장 참조 |
+| 라이브 (V2 미리보기) | https://sixtysix-v2.vercel.app — 6/11 화면 |
 | GitHub | https://github.com/jaejinu/sixtysix |
 | Figma (작업 파일) | `wwn6VrLIgZENhkjshPGjy6` — `00_TOKENS` · `01_V1_CURRENT` · `02_BRAND` · `03_V2_WIREFRAME` |
 | Figma (옛 파일) | `wXlbUU8EH8os9fgDA9omoB` — **손대지 않는다** |
-| Vercel | `sixtysix` (V1, 루트 `sixtysix/`) · `sixtysix-v2` (V2, 루트 `sixtysix-v2/`, 연결 중) |
+| Vercel | `sixtysix` (V1, 루트 `sixtysix/`) · `sixtysix-v2` (V2, 루트 `sixtysix-v2/`, Vite) — 같은 저장소, `main` 푸시 시 각각 자동 배포 |
 
 > `sixtysix.vercel.app` 은 **다른 사람 사이트**다. V1 공개 주소는 `sixtysix-taupe.vercel.app`.
 
@@ -68,7 +68,7 @@ V1 은 코호트가 「18명 + 내가 했나」 하드코딩이라 살아 있지
 | 화면 | HTML · CSS · JS (프레임워크 없음) | React 19 · TypeScript · Vite 5 · react-router 7 |
 | 상태 | localStorage | 도메인(순수 함수) + 시뮬레이터 + Clock + localStorage |
 | 테스트 | Playwright 210개 (360·390·430px) | Vitest 169개 (도메인 · 저장소 · 화면 · 흐름) |
-| 배포 | Vercel, `main` 푸시 시 자동 | 아직 없음 |
+| 배포 | Vercel `sixtysix`, `main` 푸시 시 자동 | Vercel `sixtysix-v2`, `main` 푸시 시 자동 (V2 폴더가 바뀐 경우만) |
 
 ### 1.5 폴더
 
@@ -110,7 +110,8 @@ V1 은 코호트가 「18명 + 내가 했나」 하드코딩이라 살아 있지
 | 08 | React 구현 | ◐ **6/11 화면** | 09-11 ~ 09-30 |
 | 06 | V2 디자인 최종 점검 | ☐ | 09 전에 |
 | 07 | V2 `.md` 문서 갱신 | ☐ | 09 전에 |
-| 09 | 구현 QA · V2 배포 | ☐ | |
+| — | V2 미리보기 배포 (별도 Vercel 프로젝트) | ✅ | 10-05 `65aa8c7` |
+| 09 | 구현 QA · V2 정식 공개 | ☐ | |
 
 > 강의 순서는 06 → 07 → 08 이지만, React 를 04단계 구조가 잠긴 뒤 바로 시작했고
 > 06·07 은 화면이 다 나온 뒤 09 전에 한 번에 한다.
@@ -210,42 +211,31 @@ Gate 2 A/B (같은 seed, momentum 계수 0 → 0.35) — 3일 내 복귀율 81.6
 
 ---
 
-## 4. 진행 중 — V2 Vercel 연결
+## 4. V2 배포 (2026-10-05 완료)
 
-**방침**: V1 주소는 동결된 비교 기준으로 남기고, V2 는 **별도 프로젝트**로 올린다.
+**방침** — V1 주소는 동결된 비교 기준으로 남기고, V2 는 **별도 프로젝트**로 올린다.
 배포는 Git 푸시로만 한다. `vercel --prod` 직접 배포는 쓰지 않는다.
 
-| 단계 | 상태 |
-|---|---|
-| 프로젝트 `sixtysix-v2` 생성 (팀 `dbwowls12345-3437s-projects`) | ✅ 2026-10-05 |
-| Root Directory `sixtysix-v2` · Framework `vite` 설정 | ✅ 확인함 |
-| GitHub 저장소 `jaejinu/sixtysix` 연결 | ☐ **여기서 멈춤** |
-| V2 폴더가 안 바뀐 커밋은 빌드 건너뛰기 (`ignoreCommand`) | ☐ |
-| 첫 배포 · 주소 확인 · 브라우저 확인 | ☐ |
-| README · HANDOFF 에 V2 주소 기록 | ☐ |
+| | V1 | V2 |
+|---|---|---|
+| Vercel 프로젝트 | `sixtysix` | `sixtysix-v2` (`prj_DX0fg9DaTyWW2nSzVspxHGrC8uta`) |
+| 주소 | https://sixtysix-taupe.vercel.app | https://sixtysix-v2.vercel.app |
+| Root Directory | `sixtysix/` | `sixtysix-v2/` |
+| 프레임워크 | Other (정적) | Vite (`npm run build` → `dist/`) |
+| 저장소 · 브랜치 | `jaejinu/sixtysix` · `main` | 같음 |
 
-**이어서 할 명령**
+**동작 방식**
 
-```bash
-cd sixtysix-v2
-vercel link --yes --project sixtysix-v2 --scope dbwowls12345-3437s-projects   # .vercel/ 는 gitignore 됨
-vercel project inspect --non-interactive                                       # 대상이 sixtysix-v2 인지 확인
-vercel git connect https://github.com/jaejinu/sixtysix.git
-```
+- 한 저장소에 프로젝트가 둘이다. `main` 에 푸시하면 **둘 다** 빌드를 시도한다
+- V2 는 `sixtysix-v2/vercel.json` 의 `ignoreCommand` 로 **V2 폴더가 안 바뀐 푸시는 건너뛴다**
+  - 비교 기준은 `HEAD^` 가 아니라 마지막 성공 배포 `VERCEL_GIT_PREVIOUS_SHA` — 여러 커밋을 한 번에 올려도 놓치지 않는다
+  - 이전 배포가 없거나 SHA 를 못 찾으면 빌드한다 (안전한 쪽)
+- SPA 라우팅 — 모든 경로를 `index.html` 로 (`/record` 같은 직접 진입 확인함)
+- 로컬 연결 — `sixtysix-v2/.vercel/` (gitignore). `vercel link` 가 만든 `.env.local`(OIDC 토큰)도 `sixtysix-v2/.gitignore` 가 막는다
 
-`sixtysix-v2/vercel.json` 에 추가할 것
+**첫 배포 확인 (`65aa8c7`)** — 온보딩 → 홈 D+1 · 직접 진입 `/record` 66칸 · Pretendard·Anton 로드 · 콘솔 오류 0 · 4xx/5xx 0
 
-```json
-{
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- ."
-}
-```
-
-그다음 커밋 · 푸시 → V2 첫 배포. 이후 한 저장소에 프로젝트 두 개가 붙어 있으므로
-푸시마다 V1·V2 가 각각 빌드를 시도한다(V2 는 폴더 변경이 없으면 건너뜀).
-
-> 알아둘 것 — V2 는 아직 5화면이 없다. 지금 올리는 건 **미리보기**다. 정식 공개는 09단계.
+> V2 는 아직 5화면이 없다. 지금 주소는 **미리보기**다. 정식 공개(README 메인 링크 교체)는 09단계.
 
 ---
 
@@ -255,12 +245,11 @@ vercel git connect https://github.com/jaejinu/sixtysix.git
 
 | # | 할 일 | 메모 |
 |---|---|---|
-| 1 | Vercel 연결 마무리 | 4장 |
-| 2 | **졸업** 화면 | 실제 기록에서 계산 (P3-G). 「22명 완주」 같은 지어낸 숫자 금지 — 시뮬레이터 값. 홈 완주 상태 버튼이 지금은 기록으로 보내고 있다 → 졸업으로 |
-| 3 | **인증 상세** | 응원 · 저장 · 신고. `Reaction` 타입은 도메인에 있고 아직 안 씀 |
-| 4 | **챌린지 탐색** · **챌린지 상세** | 진입점은 마이 한 곳으로 (P3-H). 검색 · 카테고리 · 정렬 |
-| 5 | **공지** | 마이 하위, 진입점 1곳 |
-| 6 | 마이에 공지 · 탐색 흡수 | 와이어프레임 3.5 |
+| 1 | **졸업** 화면 | 실제 기록에서 계산 (P3-G). 「22명 완주」 같은 지어낸 숫자 금지 — 시뮬레이터 값. 홈 완주 상태 버튼이 지금은 기록으로 보내고 있다 → 졸업으로 |
+| 2 | **인증 상세** | 응원 · 저장 · 신고. `Reaction` 타입은 도메인에 있고 아직 안 씀 |
+| 3 | **챌린지 탐색** · **챌린지 상세** | 진입점은 마이 한 곳으로 (P3-H). 검색 · 카테고리 · 정렬 |
+| 4 | **공지** | 마이 하위, 진입점 1곳 |
+| 5 | 마이에 공지 · 탐색 흡수 | 와이어프레임 3.5 |
 
 > 이전 문서들에 「남은 화면 4개」로 적혀 있었는데, 와이어프레임 11화면 기준으로는 **공지까지 5개**다.
 
@@ -269,7 +258,7 @@ vercel git connect https://github.com/jaejinu/sixtysix.git
 - **06 디자인 최종 점검** — 남은 5화면도 9/30 규칙(글자 단계 · 간격 3단 · 면)을 따르는지, 360 · 390 · 430px
 - **07 문서 갱신** — `sixtysix-project.md` · `sixtysix-design-rull.md` 의 V2 판 (V1 원본은 동결이므로 별도 파일 검토)
 - **V2 브라우저 회귀 테스트** — 지금 V2 는 Vitest(jsdom)만 있다. `qa/` 는 V1 전용. V2 용 Playwright 흐름 · 레이아웃 · 스크린샷 층이 필요
-- **09 QA · 배포** — 정식 공개, README 를 V2 중심으로
+- **09 QA · 정식 공개** — README 메인 링크를 V2 로, V1 은 비교 기준 링크로
 
 ### 5.3 아직 결정하지 않은 것 (V2-SCOPE · 와이어프레임)
 
