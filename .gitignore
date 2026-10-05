@@ -2,6 +2,7 @@
 node_modules/
 
 # Playwright 산출물
+.playwright-mcp/
 qa/test-results/
 qa/playwright-report/
 qa/blob-report/
@@ -18,3 +19,7 @@ Thumbs.db
 # Vercel
 .vercel
 sixtysix-v2/dist/
+
+# 서버 비밀값 (예시 파일만 버전 관리)
+.env*
+!.env.example

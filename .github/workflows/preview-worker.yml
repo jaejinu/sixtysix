@@ -1,0 +1,49 @@
+name: Preview scheduled worker
+
+on:
+  schedule:
+    - cron: '2-57/5 * * * *'
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: 'Start due cohorts and deliver in-app notifications (false = status only)'
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sixtysix-preview-worker
+  cancel-in-progress: false
+
+jobs:
+  tick:
+    if: >-
+      github.repository == 'jaejinu/sixtysix' && github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' || vars.WORKER_SCHEDULE_ENABLED == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: preview-worker
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Install only worker dependencies
+        run: npm ci --omit=dev --ignore-scripts
+        working-directory: backend
+      - name: Run one bounded tick
+        env:
+          WORKER_DATABASE_URL: ${{ secrets.WORKER_DATABASE_URL }}
+          APPLY: ${{ github.event_name == 'schedule' || inputs.apply }}
+        working-directory: backend
+        run: |
+          if [ "$APPLY" = "true" ]; then
+            npm run worker:tick -- --apply --batch=20
+          else
+            npm run worker:tick -- --batch=20
+          fi

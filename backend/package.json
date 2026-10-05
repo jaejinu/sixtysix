@@ -1,0 +1,26 @@
+{
+  "name": "sixtysix-backend-contract",
+  "version": "0.2.0",
+  "private": true,
+  "description": "SIXTYSIX DB migrations and API contract tooling",
+  "scripts": {
+    "validate:api": "node scripts/validate-contract.cjs",
+    "db:migrate": "node --env-file-if-exists=.env scripts/migrate.cjs",
+    "db:provision-runtime": "node --env-file-if-exists=.env scripts/provision-runtime.cjs",
+    "db:verify-runtime": "node --env-file-if-exists=.env scripts/verify-runtime.cjs",
+    "auth:cleanup": "node --env-file-if-exists=.env scripts/cleanup-auth.cjs",
+    "test:auth-spike": "node --test auth-spike/compatibility.test.mjs",
+    "outbox:work": "node --env-file-if-exists=.env scripts/process-outbox.cjs",
+    "db:provision-worker": "node --env-file-if-exists=.env scripts/provision-worker.cjs",
+    "worker:tick": "node --env-file-if-exists=.env scripts/run-scheduled-work.cjs"
+  },
+  "devDependencies": {
+    "@apidevtools/swagger-parser": "13.1.0",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "better-auth": "1.7.7"
+  },
+  "dependencies": {
+    "pg": "8.23.1"
+  }
+}
