@@ -3,8 +3,14 @@
   "installCommand": "npm ci",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/v1/:__route(.*)", "destination": "/api/backend?__route=:__route" },
-    { "source": "/((?!api/|v1/).*)", "destination": "/index.html" }
+    {
+      "source": "/v1/:__route(.*)",
+      "destination": "/api/backend?__route=:__route"
+    },
+    {
+      "source": "/((?!api/|v1/).*)",
+      "destination": "/index.html"
+    }
   ],
-  "ignoreCommand": "[ -n \"$VERCEL_GIT_PREVIOUS_SHA\" ] && git diff --quiet \"$VERCEL_GIT_PREVIOUS_SHA\" HEAD -- ."
+  "ignoreCommand": "if [ -n \"$VERCEL_GIT_PREVIOUS_SHA\" ] && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then git diff --quiet \"$VERCEL_GIT_PREVIOUS_SHA\" HEAD -- .; result=$?; [ \"$result\" -eq 0 ] && exit 0; fi; exit 1"
 }
