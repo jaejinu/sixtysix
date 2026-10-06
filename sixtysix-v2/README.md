@@ -67,7 +67,7 @@ DB 통합 검증은 `AUTH_TEST_DATABASE_URL`과 테스트 DB 생성 권한이 �
 
 ## 배포
 
-Vercel 프로젝트 루트는 `sixtysix-v2/`입니다. `/v1/*`는 서버 함수로, 화면 경로는 SPA로 전달합니다. main push는 연결된 배포를 유발할 수 있습니다. 마지막 Preview는 미커밋 로컬 코드로 배포된 기록이 있으므로 소스 재현 상태는 [PROGRESS.md](../PROGRESS.md)를 확인하세요.
+Vercel 프로젝트 루트는 `sixtysix-v2/`입니다. `/v1/*`는 서버 함수로, 화면 경로는 SPA로 전달합니다. main push는 연결된 배포를 유발할 수 있습니다. Preview는 `70a7000` 소스로 재배포했습니다. 고정 검수 주소와 Production의 환경 설정 범위는 [PROGRESS.md](../PROGRESS.md) 29장을 확인하세요.
 
 ## 테스트 네 층
 

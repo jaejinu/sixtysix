@@ -55,4 +55,4 @@ npm --prefix sixtysix-v2 run test:auth-core
 - 업무: [모집·참여](../v2/COHORT-JOIN-IMPLEMENTATION.md), [인증·기록](../v2/CHECKIN-RECORD-IMPLEMENTATION.md), [요청 제한](../v2/BUSINESS-RATE-LIMITS.md), [운영자 모집](../v2/OPERATOR-COHORTS.md)
 - 운영: [DB 권한 분리](../v2/RUNTIME-DB-IMPLEMENTATION.md), [outbox·알림](../v2/OUTBOX-IMPLEMENTATION.md), [예약 worker](../v2/SCHEDULED-WORKER.md), [Vercel 설정](../v2/VERCEL-BACKEND-SETUP.md)
 
-기능별 문서는 해당 작업 당시의 검증 기록을 포함합니다. 배포·공급자 설정·worker 활성화의 현재 재개 기준은 PROGRESS의 0장과 28장을 우선합니다.
+기능별 문서는 해당 작업 당시의 검증 기록을 포함합니다. 배포·공급자 설정·worker 활성화의 현재 재개 기준은 PROGRESS의 0장과 28~29장을 우선합니다.

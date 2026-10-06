@@ -1,7 +1,7 @@
 # 진행 현황 — 육십육 (SIXTYSIX)
 
 > 무엇을 했고, 무엇을 하는 중이고, 무엇이 남았는가를 한 문서에 모은다.
-> 최종 갱신: 2026-10-06 · worker 반영 HEAD `d9a89fd` + 앱 미커밋 구현
+> 최종 갱신: 2026-10-06 · 앱 반영 `2b182de` · 배포 설정 수정 `70a7000` (29장)
 >
 > 결정의 근거는 [`v2/V2-SCOPE.md`](v2/V2-SCOPE.md), 작업 방법과 함정은 [`HANDOFF.md`](HANDOFF.md) 에 있다.
 > 이 문서는 **상태**만 다룬다. 충돌하면 V2-SCOPE 를 따른다.
@@ -17,7 +17,7 @@
 | V2 데모 | localStorage·시뮬레이터 기반 6화면 |
 | V2 실제 계정 | 로그인·계정·모집·본인 활동·알림·운영자 화면과 API 구현 |
 | DB | migration 001~009, 앱·소유자·worker 권한 분리 |
-| Preview | 고정 검수 주소·인증 기반 설정 완료 기록. 공급자 키는 미등록 (28장) |
+| Preview | `70a7000` 소스로 재배포·고정 검수 주소 연결 완료. 공급자 키는 미등록 (28~29장) |
 | worker | 5분 예약 활성화·수동 실행 성공 기록. 실제 schedule 이벤트는 마지막 조회에서 미관측 (26~28장) |
 | 다음 | 카카오 설정·실계정 흐름 검수. 이메일은 발송 도메인 미보유로 보류 |
 
@@ -639,4 +639,10 @@ Git HEAD는 `d9a89fd`이며 이번 인증 설정/검증 도구/문서와 앱 변
 - 공급자 키 설정·실계정 검수는 남아 있다. 이번 배포는 이를 완료한 것으로 간주하지 않는다.
 - 앱·문서·도구 120개 파일을 `2b182de`로 커밋하고 main에 push했다.
 - 첫 CLI Preview 빌드는 성공했다. Git 연동 빌드는 `.vercelignore`가 Git 이력을 제외한 뒤 ignoreCommand가 실행되어 실패했다. Git 이력이 없는 경우 정상 빌드(종료 코드 1)로 진행하도록 수정했다.
-- 최종 Preview 연결과 원격 HTTP 검증은 후속 결과를 따른다.
+- 배포 설정 수정은 `70a7000`으로 main에 반영했다. 변경 없음·변경 있음·SHA 없음·Git 이력 없음·알 수 없는 SHA의 5개 분기 검증 통과.
+- Git 연동 V1·V2 배포 성공. V2 Production `dpl_38qFYq4ttGhQZycrvCsRSJast6U9`는 READY이며 `https://sixtysix-v2.vercel.app`에 연결됐다. 공개 주소에서 `/home`·`/v1/health`는 200, `/v1/ready`·`/v1/auth/context`는 503이다. Production DB·인증 환경은 이번에 설정하지 않았으며 실제 계정 기능 검수는 Preview에서 진행한다.
+- CLI Preview `dpl_DKKDkswVYFCvX1KjuzHn9kEnXcxU` 배포 성공. `https://sixtysix-v2-859a0u55j-dbwowls12345-3437s-projects.vercel.app`에 고정 alias `https://sixtysix-v2-auth-preview.vercel.app`를 연결했다.
+- 커밋 대상 120개 파일에서 현재 로컬 비밀값 일치·비밀 파일 경로 발견 0건, CLI 업로드 128개 파일 검사 통과.
+- 원격 빌드의 의존성 audit 보고는 7건(중간 3·높음 2·심각 2)으로 이전 5건 기록과 다르다. 이 보고는 개발 의존성 포함이며, 이번 배포에서 버전 변경은 하지 않았다. 원인·실행 의존성 영향 확인은 후속이다.
+
+- 고정 Preview 원격 HTTP **22개 검사 통과**: DB·공개 API·인증 context·비로그인 차단·Origin 방어·자산·SPA. 공급자 실계정 로그인은 미검증이다.
