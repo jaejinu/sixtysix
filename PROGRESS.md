@@ -1,23 +1,75 @@
 # 진행 현황 — 육십육 (SIXTYSIX)
 
 > 무엇을 했고, 무엇을 하는 중이고, 무엇이 남았는가를 한 문서에 모은다.
-> 최종 갱신: 2026-10-05 · 기준 커밋 `65aa8c7`
+> 최종 갱신: 2026-10-06 · worker 반영 HEAD `d9a89fd` + 앱 미커밋 구현
 >
 > 결정의 근거는 [`v2/V2-SCOPE.md`](v2/V2-SCOPE.md), 작업 방법과 함정은 [`HANDOFF.md`](HANDOFF.md) 에 있다.
 > 이 문서는 **상태**만 다룬다. 충돌하면 V2-SCOPE 를 따른다.
 
 ---
 
-## 0. 한눈에
+## 0. 현재 상태 (2026-10-06)
 
-| | |
+| 항목 | 상태 |
 |---|---|
-| 무엇 | 같은 날 시작한 30명 코호트와 하나의 습관을 66일 동안 매일 인증하고 완주하는 모바일 웹 |
-| 지금 단계 | 강의 `beginner-mvp-v2` **08단계 (React 구현)** 후반 |
-| V1 | 완료 · **동결** (`v1.1` 태그). 비교 기준점이다. 고치지 않는다 |
-| V2 | 11화면 중 **6화면 동작**. 테스트 169개 통과. **미리보기 배포** https://sixtysix-v2.vercel.app |
-| 진행 중 | 없음 |
-| 다음 | 남은 5화면 → 06·07단계 점검 → V2 브라우저 테스트 → 09 QA·정식 공개 |
+| 서비스 | 같은 날 시작한 최대 30명 코호트와 66일 습관을 인증하는 모바일 웹 |
+| V1 | 완료·동결. 비교 기준 |
+| V2 데모 | localStorage·시뮬레이터 기반 6화면 |
+| V2 실제 계정 | 로그인·계정·모집·본인 활동·알림·운영자 화면과 API 구현 |
+| DB | migration 001~009, 앱·소유자·worker 권한 분리 |
+| Preview | 고정 검수 주소·인증 기반 설정 완료 기록. 공급자 키는 미등록 (28장) |
+| worker | 5분 예약 활성화·수동 실행 성공 기록. 실제 schedule 이벤트는 마지막 조회에서 미관측 (26~28장) |
+| 다음 | 카카오 설정·실계정 흐름 검수. 이메일은 발송 도메인 미보유로 보류 |
+
+### 이번 로컬 점검
+
+- V2 Vitest **27개 파일·268개 통과**, 프런트·서버 타입 검사와 프로덕션 빌드 통과.
+- OpenAPI **47개 경로·21개 계약 사례 통과**.
+- 새 통합 명령 `npm --prefix qa run test:v2`로 모바일 **69개 상태/흐름 통과**(활동 42·알림 12·운영자 15). 360/390/430px, 페이지 오류 없음. 테스트 API 응답 기반이며 실제 공급자·DB E2E와 구분한다.
+- 수정한 문서 7개의 로컬 파일 링크와 `git diff --check` 통과.
+- 실제 DB/HTTP 140개와 Preview HTTP 22개는 이전 검증 기록이다. 이번 문서 정리에서 원격 DB·배포·공급자·worker 상태를 재조회하지 않았다.
+- V1 Playwright 210개는 이전 등록 목록 기준이다. 이번에는 V1 회귀를 재실행하지 않았다.
+- README는 구조·실행 방법, HANDOFF는 작업 원칙, 이 문서는 진행 상태를 담당하도록 정리했다. 기능 문서의 이전 단계 수치는 해당 시점의 기록으로 읽는다.
+
+### 미커밋 변경 검토 순서
+
+정리 시작 시 추적 파일 수정 17개·미추적 파일 102개였다. HEAD는 `d9a89fd`이며 앱 Preview는 미커밋 소스로 배포된 기록이 있다. 아래는 검토 분류이며 독립적으로 빌드 가능한 커밋 경계는 아니다. 이후 사용자 요청으로 전체 변경의 커밋·push·Preview 배포를 진행한다 (29장).
+
+| 분류 | 주요 경로 | 검토 기준 |
+|---|---|---|
+| 서버·계약 | `sixtysix-v2/server/`, `api/`, `tsconfig.server.json`, `backend/openapi.json`, `backend/auth-spike/`, `backend/scripts/`의 미추적 검증 도구 | 의존성·타입·OpenAPI·DB 통합 검증. worker의 기존 커밋 포함 범위와 구분 |
+| 계정·업무 UI | `src/auth/`, `cohorts/`, `records/`, `notifications/`, `admin/`, 새 화면·흐름 테스트, App·기존 화면·스타일 변경 | 데모 분리·권한/만료·재시도 및 모바일 검수 |
+| 빌드·배포 | V2 package/lock, Vite·Vitest·Vercel 설정, `.vercelignore`, `.env.example`, `.gitignore` | 환경변수 예시·비밀 파일 제외·API/SPA 산출물 |
+| QA | `qa/scripts/`, `qa/package.json`, `qa/README.md` | 실제 API를 호출하지 않는 모바일 검수 명령 |
+| 문서·디자인 | 루트 문서, 각 README, `v2/`의 기능 문서·디자인 계획·fixture | 확정 범위와 제안 구분, 상태 중복 제거 |
+| 개발 도구 | `sixtysix-v2/.agents/`, `skills-lock.json` | 앱 실행 의존성이 아닌 개발 보조 자산. 저장소 포함 여부 별도 검토 |
+
+통합된 앱은 공유 서비스와 설정에 의존하므로 검토 분류대로 파일을 일부만 커밋하면 누락이 생길 수 있다. 소스 기준을 확정할 때 전체 의존 관계를 함께 확인한다. 실제 비밀 파일·빌드 산출물은 제외한다.
+
+### 남은 작업
+
+1. 28장의 카카오 설정을 마친 뒤 실제 로그인·동의 취소·로그아웃·세션 복원을 검수한다.
+2. 지정한 검수 계정으로 운영자 모집·참여·인증·알림까지 연결해 확인한다.
+3. worker schedule 이벤트의 실행 여부를 확인한다.
+4. 29장의 커밋·배포 결과를 기준으로 소스와 Preview의 일치 여부를 확인한다.
+5. 개발 의존성 audit의 이전 경고를 재점검하고, 사진 업로드·타인 피드·남은 화면은 범위에 따라 후속 진행한다.
+
+### 과거 기록 읽는 법
+
+아래 2026-10-05 재개 점검과 1~8장은 데모 단계의 상태를 포함한다. 10~28장은 이후 확장 순서대로 쌓은 이력이며, 각 장의 ‘다음’은 작성 당시 기준이다. 공급자 설정과 비밀값 보존 절차는 28장을 따른다.
+
+### 2026-10-05 작업 재개 점검
+
+> 아래는 재개 당시 기록이다. 후속 검증과 권한 분리 결과는 19~25장을 우선한다.
+
+
+- `npm test`: 22개 파일, 220개 통과. `npm run build`: 프런트·서버 타입 검사 및 프로덕션 빌드 통과.
+- 서버 구현은 `sixtysix-v2/server/`, API 진입점은 `sixtysix-v2/api/`, DB migration·OpenAPI·통합 검증 도구는 `backend/`에 있다.
+- 로그인/계정(`/login`, `/account`), 공개 모집(`/recruitment`), 본인 활동(`/activity/:membershipId`)은 기존 localStorage 데모와 분리된다.
+- 마지막 작업은 [실제 인증·면제권 연결](v2/CHECKIN-RECORD-IMPLEMENTATION.md). 해당 문서는 아직 구현 중 상태다. 이번에는 DB/HTTP 통합, 공급자 로그인, 모바일 브라우저, 원격 배포를 재검증하지 않았다.
+- 인증·모집·활동 관련 코드와 문서가 다수 미커밋/미추적 상태로 남아 있다. 작업 재개 시 이 파일들을 보존한다.
+- Preview DB 연결과 공급자/배포 미완료 상태는 아래 단계별 기록 기준이다. 이번 점검은 원격 환경을 조회하지 않았다.
+- 아래 단계도와 1~8장의 화면 수·테스트 수는 데모 단계 기록이다. 현재 요약은 이 절, 서버 확장 이력은 10~18장을 우선한다.
 
 ```
 01 V1 진단 ✅ → 02 V2 범위 ✅ → Gate 1·2·3 ✅ → 03 Figma 이전 ✅ → 04 와이어프레임 ✅
@@ -338,3 +390,251 @@ git push origin main
 | V2 코드 구조 · 테스트 층 | `sixtysix-v2/README.md` |
 | 로고 규정 | `brand/README.md` |
 | V1 화면 명세 · 디자인 규정 | `sixtysix/sixtysix-project.md` · `sixtysix/sixtysix-design-rull.md` |
+
+## 9. Figma 디자인 시스템·아키텍처 정리 (2026-10-05)
+
+디자인 작업의 개요·범위·단계·검수·최신 기록은 **[v2/DESIGN-WORKPLAN.md](v2/DESIGN-WORKPLAN.md)** 에서 계속 갱신한다.
+
+기존 작업 파일 `wwn6VrLIgZENhkjshPGjy6`에서 기반을 먼저 정리한 뒤, **기본 컴포넌트와 홈 제안 화면**까지 확장했다. 아래 기반 수치는 최초 정리 시점의 기록이며 최신 산출물은 이 절 하단과 디자인 작업 문서에서 관리한다.
+
+| 페이지 | 내용 | 바로가기 |
+|---|---|---|
+| `00_START_HERE` | 파일 안내, 디자인 4계층, 내비게이션 구조, 작업 순서 | [안내 보드](https://www.figma.com/design/wwn6VrLIgZENhkjshPGjy6?node-id=30-2) |
+| `04_V2_FOUNDATIONS` | 색상·타이포·간격·모바일 폭 기준표 3개 | [색상](https://www.figma.com/design/wwn6VrLIgZENhkjshPGjy6?node-id=31-3) · [타이포](https://www.figma.com/design/wwn6VrLIgZENhkjshPGjy6?node-id=31-151) · [레이아웃](https://www.figma.com/design/wwn6VrLIgZENhkjshPGjy6?node-id=32-2) |
+| `05_V2_COMPONENT_ARCHITECTURE` | 컴포넌트 속성·상태 계약, 패턴 분류, 11개 화면 책임 | [컴포넌트](https://www.figma.com/design/wwn6VrLIgZENhkjshPGjy6?node-id=33-3) · [화면 구조](https://www.figma.com/design/wwn6VrLIgZENhkjshPGjy6?node-id=33-83) |
+
+- 실제 파일에서 확인된 기존 자산은 `00_TOKENS` 아이콘 11개, V1 보존 페이지, V2 홈 와이어프레임이었다. 이전 문서의 브랜드 페이지·스타일 등록 기록과 실제 파일이 달랐으며, 이번 작업에서 기존 노드를 삭제하거나 덮어쓰지 않았다.
+- 빈 `Page 1`을 `00_START_HERE`로 재사용하고 파일 맨 앞에 배치했다.
+- 변수: `V2 / Primitives` 64개 + `V2 / Semantic` 79개 = **143개**. 의미 변수는 기본값을 alias로 참조하며 실제 CSS 변수 구문과 사용 범위를 등록했다.
+- 스타일: **텍스트 14개 + 그림자 1개**. 텍스트 스타일의 크기는 변수에 연결했다.
+- 검증: 변수 alias·scope·WEB syntax·스타일 크기 바인딩 오류 0건. 보드 6개의 시각 검수 완료.
+- 폰트 제한: Pretendard는 도구에서 로드할 수 없다. 한글 9개 스타일은 기존 대체 규칙에 따라 Noto Sans KR로 만들고 목표 Pretendard 굵기를 설명에 기록했다. Figma 앱에서 스타일의 패밀리와 굵기를 교체한 뒤 최종 타이포 검수가 필요하다.
+- 코드 기준값은 BASELINE, Hero 축소·작은 설명 글씨·44px 조작 영역 등 개선 항목은 REVIEW로 분리했다. 앱 코드는 변경하지 않았다.
+
+후속 디자인 작업 완료 (2026-10-05):
+
+- [기본 컴포넌트 보드](https://www.figma.com/design/wwn6VrLIgZENhkjshPGjy6?node-id=42-2): Button·Field·Toggle·Segment·Badge 5종, 32개 상태와 편집 속성.
+- [홈 제안 보드](https://www.figma.com/design/wwn6VrLIgZENhkjshPGjy6?node-id=44-182): 재사용 패턴 7개, 360·390·430px 화면, [전체 스크롤 콘텐츠](https://www.figma.com/design/wwn6VrLIgZENhkjshPGjy6?node-id=44-473). 사진 축소와 카드 안 인증 버튼으로 오늘 행동과 코호트 현황을 앞당겼다.
+- 추가 제안 변수 4개로 현재 총 147개. 스타일 14개 유지. 상태·조작 크기·세 폭의 내부 넘침 검수 오류 0건, 렌더링 검수 완료.
+- 작업 개요를 MD에 선행 작성하고 단계별 상태·결정·노드 링크·검수 결과를 갱신했다. 이번 디자인 작업에서는 앱 코드를 변경하지 않았다.
+
+홈 상태 확장 완료: [08_V2_HOME_STATES](https://www.figma.com/design/wwn6VrLIgZENhkjshPGjy6?node-id=50-3)에 카드 6개 상태와 신규 화면 5종 × 360·390·430px를 만들었다. 종료와 완주, 빈칸과 남은 기간, 휴면과 복귀 후 표시를 구분했다. 수치는 기존 selector를 실행한 [상태 fixture](v2/design-home-state-fixtures.json) 기준이며, 15개 화면 레이아웃·스타일·조작 크기 검수 오류 0건이다. 상세 링크와 한계는 디자인 작업 문서 11장에 기록했다.
+
+다음: Pretendard 최종 검수, 코호트·기록·인증 작성 디자인 확장과 B0 기능 계약 정리 → 확정 디자인의 React 반영.
+
+## 10. 기능 현황·백엔드 준비 (2026-10-05)
+
+[v2/FUNCTIONAL-BACKEND-PLAN.md](v2/FUNCTIONAL-BACKEND-PLAN.md)에 실제 구현 기능과 데모 의존 기능, 데이터/API 초안, 권한·동시 요청 처리, 단계별 완료 조건을 정리했다.
+
+- 현재는 localStorage + 가상 멤버 29명. 실제 시간 모드도 서버 서비스가 아니다.
+- 면제권은 모델·명령이 있지만 V2 사용 UI가 연결되지 않았다. 인증 수정·졸업 전용 화면·실제 사진 업로드·로그인·알림은 미구현이다.
+- 백엔드 계약(B0)은 지금 시작할 수 있다. 코호트 모집/예약, 최종 늦은 인증 창, 면제권 완료 표현, 인증·공개 범위를 먼저 정리한다.
+- 첫 연결은 로그인 → 코호트 참여 → 인증 저장 → 홈·기록·피드 동기화. 서버/DB 구현·기술 스택 선정은 이번 문서화 작업에 포함하지 않았다.
+
+### B0 구체 명세 갱신
+
+[v2/BACKEND-B0-SPEC.md](v2/BACKEND-B0-SPEC.md)에 정책 결정표, 첫 개발 범위, 시간·상태 전이, DB 제약과 트랜잭션, API·오류, T01~T07 작업 순서와 수용 사례 28개를 작성했다.
+
+- **사용자 확정:** 이메일 인증번호 + 카카오 로그인, 공개 모집부터 시작.
+- 계정 연결/충돌/해제, 모집 취소·탈퇴·중도 이탈·신고·문의·운영자 기능을 첫 범위에 반영했다.
+- 마지막 날 늦은 인증은 기존 테스트에서 허용하고 있어 유지한다. 홈 CTA 불일치와 정확히 04:00의 분류 차이를 수정 대상으로 기록했다.
+- B0 문서 초안과 확정된 방향은 준비됐다. 세부 권장 정책은 제안 상태다. 다음은 기술 구성 선정과 OpenAPI·DB 스키마 작성이며, 서버 구현·실제 서비스 개설은 아직 하지 않았다.
+
+## 11. T02 기술 구성·DB/API 계약 (2026-10-05)
+
+- [기술 구성](v2/BACKEND-TECH-ARCHITECTURE.md): Node/TypeScript/Fastify/PostgreSQL 개발 기준. Better Auth는 이메일 미제공 카카오·양방향 수단 연결 검증 후 최종 고정하는 우선 후보.
+- [백엔드 계약 폴더](backend/README.md): 초기 업무 SQL, OpenAPI 44개 작업, 재현 가능한 검증 스크립트·의존성 lockfile.
+- 검증: PostgreSQL 스키마 생성, 제약 거부 20개 및 UTF-16 경계 통과. OpenAPI 구조/참조 검증과 입력 계약 14개 통과.
+- 한계: HTTP 서버·실제 인증·동시 명령 트랜잭션·운영 DB/메일/배포는 미구현. 이번 검증은 런타임 기능 완료나 공개 준비 완료를 의미하지 않는다.
+- 다음: **T03a 인증 호환성 spike → B1 서버 골격·인증 연결 → B2 실제 코호트 참여 → B3 인증/면제 저장**. 세부 모집/보관 정책은 기존 권장안 상태를 유지한다.
+
+## 12. Vercel 백엔드·DB 연결 기반 (2026-10-05)
+
+[VERCEL-BACKEND-SETUP.md](v2/VERCEL-BACKEND-SETUP.md)에 실제 연결 절차를 정리했다. 사용자 배포 조건에 따라 기존 `sixtysix-v2` 프로젝트에 API 함수를 추가하고 Neon PostgreSQL 연결을 권장한다.
+
+- 구현: `/v1/health`, `/v1/ready`, `/v1/habits`, API/SPA 경로 분리, 서버 DB pool·transaction, checksum/잠금/이력 기반 migration runner, 비밀값 예시 및 ignore 규칙.
+- 검증: 테스트 175개, 프런트/서버 타입 검사·Vite 빌드, 임시 DB 최초 migration/재실행과 실제 카탈로그 API 조회 통과.
+- Vercel 로컬 Preview 빌드·생성된 API 함수/중첩 경로 rewrite/SPA 산출물 검증 통과. 실제 배포는 미수행.
+- 확인: Vercel 프로젝트에 등록된 환경 변수 없음. 실제 Neon DB·메일·카카오 연결 및 배포는 미수행. React 화면은 아직 데모 저장소 사용.
+- 다음: Preview용 Neon 연결·migration → 인증 호환성 검증/실제 로그인 → 참여·인증 저장. outbox는 Vercel에 맞게 작업 함수와 스케줄로 구현한다.
+
+## 13. 실제 Preview DB·인증 호환성 검증 (2026-10-05)
+
+- **Neon DB 생성·연결 완료:** `sixtysix-v2-preview`, Free, Singapore. Vercel Preview에만 연결하고 업무 테이블 17개·migration 이력 적용. 로컬 API → 원격 DB 읽기 검증 완료. Production DB/배포는 미수행.
+- [인증 검증 결과](v2/AUTH-SPIKE-RESULTS.md): Better Auth 1.7.7 실제 handler를 메모리 DB·가짜 공급자 응답으로 실행, 12개 동작 재현. 이메일 없는 카카오·역방향 OTP 연결·수단 해제에서 제품 정책 불일치 3개를 확인해 기본 구성 직접 채택 보류.
+- **브라우저 검증 기반 추가:** `/v1/auth/context`, 서명 쿠키·CSRF 토큰·Origin/만료/변조 검사. 이는 로그인 세션이 아니며 실제 쓰기 라우트 연결과 인증 세션 검사는 후속.
+- 검증: 기존 169개 + 서버 12개 사례 통과, API 계약 14개·인증 후보 재현 12개 통과. 프런트/서버 타입 검사·빌드 확인.
+- 사용자 준비 상태: 카카오 앱·메일 발송 서비스 미개설. 다음은 런타임 DB 권한 분리, provider identity 중심 인증 adapter/엔진 선정 및 로그인 구현, 카카오·메일 공급자 설정이다.
+
+## 14. 계정·세션 인증 코어 (2026-10-05)
+
+- [개요·구현·후속 명세](v2/AUTH-CORE-IMPLEMENTATION.md)를 먼저 작성하고 결과 갱신. 이메일/카카오를 `provider + subject`로 관리하는 PostgreSQL 인증 코어 구현. 참고 이메일에 의한 자동 병합 없음.
+- 검증된 서버 증명에서 사용자·세션 생성, 최근 재인증, 양방향 수단 연결·해제, 마지막 수단 보호, 로그아웃·정지/탈퇴 요청 계정 차단. 증명은 브라우저·목적·세션/intent에 바인딩하며 한 번만 소비한다.
+- `002_auth_core.sql`을 실제 Neon Preview에 적용. 기존 업무 17개 + 인증 3개 테이블. Production·앱 배포는 미수행.
+- 검증: 실제 PostgreSQL 통합 17개(동시 최초 로그인/연결/해제와 전체 rollback 포함), 기존 181개, 타입 검사·빌드 통과.
+- **완료 경계:** 서버 내부 계정·세션 코어. OTP 발송/검증, 카카오 OAuth, HTTP 로그인/세션 쿠키, React 로그인은 아직 미구현이다. 테스트 증명을 실제 공급자 인증 완료로 간주하지 않는다.
+- 다음: 이메일 OTP·분산 제한·발송 adapter → 카카오 state/콜백 → HTTP/화면 연결. 배포 전 런타임 DB 역할 분리·감사·개인정보 정리 정책을 구현한다.
+
+## 15. 이메일 로그인 API·발송 adapter (2026-10-05)
+
+- [개요·구현·검증 기록](v2/EMAIL-AUTH-IMPLEMENTATION.md): 인증번호 요청·검증·로그아웃 HTTP API를 기존 인증 코어에 연결했다. 6자리/5분/오답 3회, DB HMAC 저장, 브라우저·이메일·IP 공유 제한, CSRF/Origin 및 세션 쿠키 적용.
+- Resend 발송 adapter 준비: 고정 endpoint·timeout·멱등 키·오류 비밀값 제거. 키/발신자 미설정은 503. 실제 계정 개설·메일 발송은 하지 않았다.
+- Neon Preview에 `003_email_login.sql` 적용. 업무 17 + 인증 5 = 22개 테이블. 기존 migration checksum 유지, 원격 읽기 검증 완료.
+- 검증: DB/HTTP 통합 31개, Vitest 186개, API 계약 14개, 타입 검사·Vite 및 Vercel 로컬 Preview 빌드·산출물 검사 통과.
+- **미완료:** 이메일 재인증/연결용 HTTP 흐름, 카카오 OAuth, `/me`·React 로그인, 공급자 실계정 검수, 런타임 DB 역할·감사·데이터 정리. 원격 앱/Production 배포는 하지 않았다.
+- 다음: 카카오 OAuth와 재인증/연결 흐름 → 로그인 UI·현재 사용자 연결. 실제 이메일은 Resend/발송 도메인 설정 후 검수한다.
+
+## 16. 카카오 OAuth·인증 수단 HTTP 흐름 (2026-10-05)
+
+- [구현 기록](v2/KAKAO-AUTH-IMPLEMENTATION.md): state hash·브라우저 결합·1회 소비·S256 PKCE·provider ID 정밀도 보존, 카카오 로그인/재인증/연결 구현. 이메일 재인증/연결도 서버 intent 기반으로 확장했다.
+- HTTP: 카카오 시작·callback, 기존 수단 재인증 intent, 새 수단 연결 intent/complete, 해제. 로그인만 새 세션 쿠키를 발급하고 재인증/연결은 같은 세션을 유지한다.
+- Neon Preview `004_auth_intents_oauth.sql` 적용, 기존 checksum 유지. 테이블 24개. 실제 공급자 호출·Production·앱 배포는 미수행.
+- 검증: PostgreSQL/HTTP 통합 45개, Vitest 191개, API 계약 14개, 타입 검사·Vite/Vercel 로컬 Preview 빌드 및 함수/라우팅 산출물 통과.
+- 다음: `/v1/me`·로그인/연결 UI·callback 결과 처리. 실제 카카오 앱/메일 도메인 설정과 실계정 검수, 런타임 역할·감사·만료 데이터 정리는 공개 서비스 전에 진행한다.
+
+### Git 공개 가능성 확인
+
+[읽기 전용 점검](v2/PUBLIC-REPOSITORY-REVIEW.md): 당시 작업 경로 244개, 로컬 Git 이력 텍스트 blob 211개에서 토큰 패턴/현재 비밀값 일치 발견 0건. `.env`/`.vercel` 제외 확인. 문서·디자인 링크·커밋 정보 공개 범위는 별도로 고려하며 visibility/commit/push는 변경하지 않았다.
+
+## 17. 현재 사용자 조회·로그인/계정 화면 (2026-10-05)
+
+- [구현·검증·문제 가능성](v2/LOGIN-UI-IMPLEMENTATION.md): `GET /v1/me`, `/login`·`/account`, OTP·카카오 callback·재인증·명시적 연결/해제·로그아웃을 연결했다. 실제 계정과 데모 기록은 분리했다.
+- Vitest 204개·PostgreSQL/HTTP 47개·계약 14개, 타입 검사·Vite/Vercel 로컬 빌드와 API/SPA 산출물 검사 통과.
+- 공급자 실계정 검수·런타임 DB 역할 분리·감사/정리·실제 코호트 업무는 남아 있다. 새 migration·원격 앱 배포·commit/push·공개 전환은 하지 않았다.
+- 모바일 360/390/430px의 로그인·코드·계정·오류 12개 상태 검수 완료(테스트 API 응답). 가로 넘침 없음, 입력/버튼 44px 이상.
+- 다음: 공개 모집 조회·참여 트랜잭션 구현. 배포 전 공급자 설정과 최소 권한 DB 연결을 검증한다.
+
+## 18. 공개 모집·참여·시작 전 취소 (2026-10-05)
+
+- [개요·구현·검증](v2/COHORT-JOIN-IMPLEMENTATION.md): 공개 모집 목록/상세, 참여/취소 API와 React `/recruitment` 연결. 실제 계정의 참여와 데모 기록을 분리한다.
+- 사용자·코호트 잠금으로 정원/슬롯 보호, 성공 응답 멱등 저장, 시작 최소 인원 판정/outbox, 취소/종료 슬롯 정리, 참여/취소 감사 이벤트 구현.
+- Vitest 212개·실제 DB/HTTP 58개·계약 14개, 타입 검사·Vite/Vercel 로컬 빌드. 모바일 18개 상태 검수 완료.
+- 최소 인원 운영 기본값 미확정. 코호트별 DB 설정값 사용. 실제 모집 등록·배포·새 migration·commit/push 미수행.
+- 다음: 실제 인증/면제권 저장과 홈·기록 연결. 공개 전 공급자 실계정 검수·DB 역할 분리·운영자 모집·남용 제한·outbox/정리 작업 필요.
+
+## 19. 실제 인증·면제권·활동 기록 검증 완료 (2026-10-05)
+
+- [구현·검증 기록](v2/CHECKIN-RECORD-IMPLEMENTATION.md): `/activity/:membershipId`의 본인 홈·66일 기록, 인증/면제권 저장, 날짜·늦은 접수 재확인, 동일 요청 재시도 연결 완료.
+- 임시 로컬 PostgreSQL DB/HTTP **68개**, Vitest **225개**, API 계약 **14개**, 프런트·서버 타입 검사·프로덕션 빌드 통과.
+- 모바일 360/390/430px **42개 상태/흐름** 검수 통과. 가로 넘침·페이지 오류 없음. 재현 도구: `qa/scripts/activity-mobile.cjs` (테스트 API 응답 사용).
+- 세션 만료/접근 거부 후 비공개 기록과 이전 계정 초안이 남는 문제 수정. 추가 회귀 5개는 수정 전 실패, 수정 후 통과 확인.
+- 원격 DB·실제 회원/모집 데이터·공급자·배포·commit/push는 변경하지 않았다. 실제 공급자 로그인부터 서버 저장까지의 브라우저 검수는 후속이다.
+- 다음: 공급자 설정/실계정 검수 및 최소 권한 DB 역할·운영 모집/남용 제한·outbox/만료 데이터 정리 → 배포 검증.
+
+## 20. Preview 런타임 DB 권한 분리 (2026-10-05)
+
+- [구현·적용·복구 절차](v2/RUNTIME-DB-IMPLEMENTATION.md): 명시적 테이블/열 grant, 역할 설정·권한 검증 도구, 샘플 사진 잠금 전용 함수, APP_DATABASE_URL 전용 앱 연결 구현.
+- 기존 68개 기능 테스트를 별도 런타임 로그인으로 전환했다. 금지 권한·재적용·역할 멤버십·필수 객체·동시 잠금 사례 포함 DB/HTTP **89개**, Vitest **231개**, 프런트·서버 타입 검사·빌드 통과.
+- 기존 Neon Preview에 migration **005**와 `sixtysix_runtime_preview` 적용. 001~004 checksum 유지, 테스트 회원/코호트 생성 없음. 런타임 pooled 연결로 API 읽기와 권한 검증 통과.
+- Vercel Preview: **APP_DATABASE_URL Secret만 남김**. 소유자 비밀값을 자동 주입하던 Marketplace 프로젝트 연결 해제, Neon 리소스는 Available로 보존. Production·원격 앱 배포·commit/push 미수행.
+- 비밀값은 Git 제외·권한 600인 admin/runtime 로컬 파일로 분리했다. 기존 배포의 환경은 소급 변경되지 않으므로 공개 전 새 배포와 이전 배포의 접근/비밀값 수명 점검이 필요하다.
+- 사용자 확인: Resend 발송 도메인·카카오 앱은 아직 준비 전. 실제 공급자 검수는 준비 후 진행한다.
+- 다음 독립 작업: 인증 감사 기록·만료 데이터 정리, 업무 남용 제한·outbox 처리.
+
+## 21. 인증 감사·만료 데이터 정리 (2026-10-05)
+
+- [구현·실행 절차](v2/AUTH-AUDIT-CLEANUP.md): 중요 인증 변경과 감사 저장을 같은 transaction으로 묶고 비밀값 없이 고정 사유만 기록한다. 미확인 세션 쿠키는 감사 쓰기를 만들지 않는다.
+- 인증 임시 데이터 7종에 만료/회수 후 24시간 유예, 전체 기본 100행·최대 500행, 참조/잠금 보호를 적용했다. CLI 기본은 dry-run이며 자동 스케줄은 추가하지 않았다.
+- DB/HTTP **102개**, Vitest **238개 / 23개 파일**, API 계약 **14개**, 프런트·서버 타입 검사·빌드 통과. 유예 기간 변이 테스트도 실패를 감지했다.
+- Neon Preview migration **006** 및 제한된 함수 실행 grant 적용. 런타임 권한 25테이블·4함수 검증, 원격 dry-run 0행. 기존 migration checksum 유지.
+- 원격 실제 삭제·앱 배포·Production 변경·commit/push 미수행. 실제 공급자 검수는 준비 후 진행한다.
+- 다음: 업무 API 남용 제한·outbox 처리. 운영 데이터 보관 정책 및 정리 스케줄은 후속.
+
+## 22. 업무 API 요청 제한 (2026-10-05)
+
+- [정책·구현·검증](v2/BUSINESS-RATE-LIMITS.md): 참여·취소·인증·면제권 요청이 계정별 새 요청 20회/분·120회/시간을 공유한다. 성공 응답 재조회는 별도 60회/분으로 정상 재시도와 폭주 제한을 함께 보장한다.
+- 업무 거부와 키 충돌도 집계하고, 429/Retry-After로 대기 시간을 전달한다. 기존 화면의 입력·멱등 키 유지와 수동 재시도 흐름을 검증했다.
+- 제한된 DB 계정의 DB/HTTP **109개**, Vitest **240개 / 23개 파일**, API 계약 **14개**, 타입 검사·빌드 통과. 제한값 변이는 4개 테스트가 감지했다.
+- 기존 카운터·정리 함수 재사용. migration·권한 추가·원격 변경·앱 배포·commit/push 없음.
+- 다음: outbox 처리 → 공급자 준비 후 실제 로그인 검수 → Preview 앱 배포.
+
+## 23. outbox 처리·앱 내부 알림 (2026-10-05)
+
+- 사용자 선택에 따라 첫 처리 채널을 앱 내부 알림으로 구현했다. [작업·실행 기록](v2/OUTBOX-IMPLEMENTATION.md).
+- 코호트 시작/모집 취소 이벤트의 60초 임대·토큰 검사·중단 복구·지수 재시도·5회 실패 보관 구현. 알림 저장·완료·감사가 원자적이며 재실행 중복을 방지한다.
+- 별도 worker 역할은 함수 4개만 실행하고 앱은 worker 함수를 사용할 수 없다. 계정 → 내 알림(`/notifications`), 본인 최신 50개 조회 API 연결.
+- DB/HTTP **121개**, Vitest **250개 / 25개 파일**, API 계약 **17개 / 47경로**, 타입 검사·빌드, 모바일 **12개 검수** 통과. 임대 토큰 비교 제거 변이를 탐지했다.
+- Preview migration **007**, 앱 SELECT·worker 전용 역할 적용. 001~006 checksum 유지, 26테이블·8함수 권한 검증. 원격 상태 전부 0건이며 실제 처리/알림 생성은 하지 않았다.
+- 수동 CLI만 제공. 자동 스케줄·외부 발송·앱 배포·Production·commit/push 미수행.
+- 다음: 운영자 모집 생성/관리. 공급자 준비 후 실계정 검수·앱 배포·worker 실행 주기 연결.
+
+## 24. 운영자 모집 생성·관리 (2026-10-05)
+
+- [구현·검증 기록](v2/OPERATOR-COHORTS.md): admin 전용 개설·목록·시작 전 취소 및 `/admin/cohorts` 관리 화면 연결.
+- 변경은 최근 5분 재인증·CSRF·멱등 키·요청 한도를 검사한다. 미래 04:00 KST 시작, 정원/최소 인원·동일 기수 중복 검증. 취소 사유·감사·outbox·멱등 응답을 원자적으로 저장한다.
+- DB/HTTP **132개**, Vitest **259개 / 26개 파일**, API 계약 **21개 / 47경로**, 타입 검사·빌드·모바일 **15개 검수** 통과. admin 검사 제거 변이를 3개 테스트가 감지했다.
+- Preview migration **008** 및 제한된 함수 실행 grant 적용. 001~007 checksum 유지, 26테이블·11함수 권한 검증, outbox 0건.
+- 실제 운영자 지정·모집 생성·알림 처리·앱 배포·Production·commit/push 미수행. 가입 계정을 자동 승격하지 않는다.
+- 다음: 자동 시작 판단·outbox 스케줄 연결. 공급자 준비 후 실계정/운영자 검수·Preview 앱 배포.
+
+## 25. 자동 시작 판단·알림 스케줄 준비 (2026-10-06)
+
+- 사용자 선택: GitHub Actions **5분 간격**. [구현·활성화 절차](v2/SCHEDULED-WORKER.md).
+- worker 전용 시작 배치·상태 함수와 통합 tick 구현. 기존 앱 시작 판단과 같은 잠금으로 중복 방지, outbox 중단 복구·처리 한도·90초 예산·실패 상태 노출 적용.
+- DB/HTTP **140개**, Vitest **268개 / 27개 파일**, 타입 검사·빌드·actionlint 통과. 최소 인원 경계 변이 탐지 및 복원 검증.
+- Preview migration **009**와 worker grant 적용, 001~008 checksum 유지. 26테이블·13함수 권한 검증, 원격 조회 모두 0건.
+- GitHub `preview-worker` 환경(main만), worker Secret, `WORKER_SCHEDULE_ENABLED=false` 준비 완료. workflow는 로컬이며 **예약 실행은 아직 비활성**이다.
+- 실제 모집 판단·알림 처리·Production·commit/push·앱 배포 미수행.
+- 다음 최종 단계: workflow/worker 파일 main 반영 → 수동 조회 실행 → 5분 자동 실행 활성화. main push의 연결된 Vercel 배포 영향과 기존 미커밋 범위를 먼저 확인한다.
+
+## 26. Preview worker 자동 실행 활성화 (2026-10-06)
+
+- 사용자 승인으로 worker·DB migration·권한 도구·운영 문서만 `d9a89fd`로 main에 반영했다. 앱 UI/API 미커밋 구현은 보존했다.
+- workflow `active`, `WORKER_SCHEDULE_ENABLED=true`. `2-57/5 * * * *`로 5분 간격, Preview worker 계정만 사용한다.
+- [조회 실행](https://github.com/jaejinu/sixtysix/actions/runs/37333104927) 및 [실제 처리 모드](https://github.com/jaejinu/sixtysix/actions/runs/37333740790) 성공. 모집 대상·알림·실패 모두 0건. 첫 schedule 이벤트는 아직 미관측이며 수동 검증과 구분한다.
+- 연결된 Vercel V1 배포 완료. V2는 Ignored Build Step으로 건너뜀. Production DB 변경 없음.
+- 중지: 저장소 변수 `WORKER_SCHEDULE_ENABLED=false`. 다음 예약 job부터 차단된다.
+- 다음: 공급자 준비 후 실계정·운영자/카탈로그 검수·Preview 앱 배포.
+
+## 27. V2 앱 Preview 배포·원격 검증 (2026-10-06)
+
+- [Preview 앱](https://sixtysix-v2-a27l26dip-dbwowls12345-3437s-projects.vercel.app) 배포 완료. Vercel 배포 `dpl_EeiXP4YTF7ehJfJMYRm9zbbm1AC6`, 상태 READY. Vercel 보호 로그인 필요 가능.
+- 로컬 미커밋 앱 구현을 CLI로 배포했다. 기존 main/Production 주소는 변경하지 않았다. 앱 소스는 아직 미커밋 상태이므로 HEAD만으로 이번 배포를 재현할 수 없다.
+- 배포 dry-run에서 `.env.preview-*` 포함을 발견해 `.vercelignore`로 제외했다. 실제 비밀 파일은 업로드하지 않았다. 첫 제외 규칙은 전체 파일을 제외하여 빈 배포가 실패했고, 수정한 뒤 128개 실제 파일(빈 디렉터리 포함 manifest 139개)을 검증하고 성공했다.
+- `backend/scripts/verify-vercel-upload.cjs`: 필수 소스·업로드 범위·비밀/생성 파일 제외 검사. 정상 목록 통과, 빈 목록·비밀 파일 추가 목록 거부 확인.
+- 로컬/원격 프런트·서버 타입 검사·빌드 통과. 원격 Preview DB 앱 권한·카탈로그 읽기 검증 통과.
+- `backend/scripts/verify-preview-http.cjs` 원격 19개 검사 통과: health/ready/habits/cohorts, 잘못된 쿼리 400, 미존재 API 404, 인증 미설정 경로 5개 503, JS/CSS 자산, SPA 6개 경로. 실제 브라우저 조작 검수와 구분한다.
+- 실행용 의존성 `npm audit --omit=dev` 0건. 전체 빌드의 개발 의존성 경고 5건은 기존 후속 항목이다.
+- Preview 환경은 APP_DATABASE_URL만 존재. 인증 context·OTP 비밀값, APP_ORIGIN, 메일·카카오 설정 미완료. 실제 로그인·운영자 지정·모집 seed는 하지 않았다.
+- worker는 활성화 유지. 이번 확인 시 첫 schedule 이벤트는 아직 미관측이며 수동 성공 2건만 확인했다.
+- 다음: 공급자 준비 후 위 Preview의 인증 환경 설정·재배포·실계정 로그인 및 운영자/카탈로그 검수. Production 승격은 별도다.
+
+## 28. 인증 기반 설정 완료·저장 후 중단 (2026-10-06)
+
+사용자가 진행 상황과 남은 작업 저장을 요청했다. 아래가 다음 세션의 재개 기준이다.
+
+### 완료
+
+- 고정 검수 주소: **https://sixtysix-v2-auth-preview.vercel.app**. 기존 Production 주소는 유지했다.
+- 최신 Preview: `https://sixtysix-v2-9lfs95usx-dbwowls12345-3437s-projects.vercel.app`, 배포 `dpl_DnAJZUi6rqNX4F2ur2G2L6B1mFqK`, 재배포 READY 및 고정 alias 연결 완료.
+- Vercel Preview에 `APP_ORIGIN`, `AUTH_CONTEXT_SECRET`, `AUTH_OTP_SECRET` 등록. 기존 `APP_DATABASE_URL` 유지. 두 비밀값은 각각 독립된 48바이트 난수로 생성했고 출력하지 않았다. 앱 환경에 owner/worker 자격 증명을 추가하지 않았다.
+- 로컬 비밀 파일 `sixtysix-v2/.env.preview-auth`는 mode 600, Git ignore 및 Vercel 업로드 제외 검증 완료. 비밀값을 문서에 복사하거나 재생성하지 않는다.
+- 원격 HTTP **22개 검사 통과**: 기존 공개 API/DB/자산/SPA + context 200/보안 쿠키, 계정·알림·관리자 비로그인 401, 카카오 미설정 503, Origin 누락·다른 출처 로그아웃 403, 정상 context의 익명 로그아웃 204. 실제 로그인·메일 발송·사용자 데이터 생성은 하지 않았다.
+- 재검증 명령: `node backend/scripts/verify-preview-http.cjs https://sixtysix-v2-auth-preview.vercel.app --context-ready`. 아직 공급자 키가 없다는 전제의 검사이며, 공급자 연결 뒤 카카오 시작 기대값을 변경해야 한다.
+- 새 비밀 파일 생성 후 업로드 목록 재검증: 실제 파일 128개, 비밀 파일 0개. worker는 활성화 유지하되 마지막 조회에서 schedule 이벤트는 미관측(수동 성공 2건)이다.
+
+### 남은 작업 순서
+
+1. **카카오 앱 준비/설정:** 개발자 콘솔의 앱과 REST API 키·활성화된 client secret이 필요하다. 사용자 계정에서 준비한 키는 Vercel `sixtysix-v2`의 **Preview** 환경에 `KAKAO_CLIENT_ID`, `KAKAO_CLIENT_SECRET`으로 등록한다. 채팅에 키를 받지 않는다.
+2. 카카오 로그인 활성화 및 현재 코드가 요청하는 `profile_nickname` 동의항목 설정을 확인한다. 정확한 redirect URI는 `https://sixtysix-v2-auth-preview.vercel.app/v1/auth/kakao/callback`. 공식 [플랫폼 키·redirect 설정](https://developers.kakao.com/docs/ko/app-setting/app) 참고.
+3. 공급자 키 등록 후 Preview 재배포 → 위 고정 alias를 새 배포로 연결 → 실제 브라우저 로그인/동의 취소/재시도/로그아웃/세션 복원 검수. Vercel 배포 보호는 유지하며 검수자가 접근할 수 있는지 확인한다. 현재 fake-provider 테스트 성공을 실계정 성공으로 간주하지 않는다.
+4. 실계정 확보 후 명시적으로 검수할 계정을 지정해 운영자 권한·모집 개설/취소·참여/인증·앱 알림 흐름을 확인한다. 임의 계정 자동 승격이나 모집 seed를 넣지 않는다.
+5. worker 예약 이벤트의 실제 실행/실패 여부를 다시 확인한다. 미실행이 지속되면 Actions 설정·schedule 지연을 점검한다.
+6. 앱/API와 배포 보조 도구의 미커밋 변경을 검토하고 재현 가능한 소스 기준으로 정리한다. main push는 Vercel에 연결되므로 기존 worker 커밋 범위와 구분한다. 개발 의존성 audit 경고 5건은 별도 후속이다.
+
+### 이메일 보류 결정
+
+- 사용자 답변: **아직 도메인이 없음**. 도메인을 임의 구매하거나 다른 프로젝트 도메인을 사용하지 않는다.
+- 추후 본인 소유 발송 도메인을 마련하고 Resend에서 DNS 검증 → 해당 도메인 발송용 키와 발신 주소를 Preview의 `RESEND_API_KEY`, `AUTH_EMAIL_FROM`에 등록 → 재배포 → 수신 실검수 순서다. [Resend 도메인 안내](https://resend.com/docs/dashboard/domains/introduction), [API 키 안내](https://resend.com/docs/dashboard/api-keys/introduction).
+- 현재 이메일과 카카오 공급자 키 모두 미등록이다. 준비 완료는 인증 기반/검수 주소에 한정된다.
+
+Git HEAD는 `d9a89fd`이며 이번 인증 설정/검증 도구/문서와 앱 변경은 로컬 미커밋 상태다. 이번 저장 요청으로 commit/push·Production 승격은 하지 않았다.
+
+## 29. 소스 정리 커밋·배포 (2026-10-06)
+
+사용자가 커밋·push·배포를 요청했다. 기존 앱/API·문서·검증 도구와 개발 보조 자산을 함께 소스 기준으로 남긴다. 로컬 비밀 파일과 생성 산출물은 Git/배포에서 제외한다.
+
+- 로컬 검증: Vitest 268개·타입 검사·빌드·OpenAPI 21개, 모바일 69개 통과.
+- main push는 연결된 Vercel 자동 배포를 유발할 수 있다. 별도 CLI 배포는 Preview 대상으로 실행하고 고정 인증 검수 alias에 연결한다.
+- 공급자 키 설정·실계정 검수는 남아 있다. 이번 배포는 이를 완료한 것으로 간주하지 않는다.
+- 커밋 및 배포 결과는 완료 후 아래에 기록한다.

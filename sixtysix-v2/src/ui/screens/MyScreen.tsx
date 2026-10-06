@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../../app/AppProvider';
 import { AppHeader } from '../components/AppHeader';
 import { Num } from '../components/Num';
@@ -140,7 +140,8 @@ export function MyScreen() {
           코호트 보기
         </button>
 
-        <p className="sample-note">샘플 데이터로 만든 데모입니다. 로그인과 실제 알림은 없어요.</p>
+        <Link className="btn btn--ghost btn--block" to="/account">로그인·계정 관리</Link>
+        <p className="sample-note">이 화면의 기록과 프로필은 샘플 데이터입니다. 실제 계정은 계정 관리에서 확인해주세요.</p>
       </main>
     </>
   );

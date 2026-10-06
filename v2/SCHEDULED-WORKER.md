@@ -1,5 +1,13 @@
 # 자동 시작 판단·알림 처리 스케줄
 
+## 활성화 기록 — 2026-10-06
+
+- 사용자 승인으로 worker 파일을 `d9a89fd`로 main에 반영했다. 앱 UI/API 미커밋 구현은 포함하지 않았다.
+- workflow `active`, 저장소 변수 `WORKER_SCHEDULE_ENABLED=true` 확인.
+- [조회 실행](https://github.com/jaejinu/sixtysix/actions/runs/37333104927)과 [실제 처리 모드](https://github.com/jaejinu/sixtysix/actions/runs/37333740790) 모두 성공. 모집 대상·알림·실패 0건.
+- 첫 예약 이벤트는 아직 미관측이다. 위 두 실행은 수동 검증이다.
+- 연결된 Vercel V1 배포 완료, V2는 Ignored Build Step으로 건너뜀. Production DB 변경 없음.
+
 2026-10-06. 사용자 선택은 **GitHub Actions 5분 간격**이다. Preview DB에 migration 009와 worker 권한을 적용했다. GitHub Actions의 실행 여부는 저장소 변수 `WORKER_SCHEDULE_ENABLED`로 관리한다.
 
 ## 구현

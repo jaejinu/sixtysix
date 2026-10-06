@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../../app/AppProvider';
 import { HABITS } from '../../app/catalog';
 import type { HabitId } from '../../domain/types';
@@ -62,6 +62,7 @@ export function OnboardingScreen() {
         샘플 데이터로 만든 데모입니다. 실제 코호트 매칭과 알림은 동작하지 않아요.
         {habit ? ` 「${habit.name}」 코호트는 ${startLabel}에 시작해요.` : ''}
       </p>
+      <Link className="account-demo-link" to="/login">이메일·카카오로 로그인</Link>
 
       <div className="sticky-bar">
         <button

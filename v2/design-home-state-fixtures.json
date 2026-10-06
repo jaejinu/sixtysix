@@ -1,0 +1,371 @@
+{
+  "generatedAt": "2026-10-05",
+  "source": "buildDemoSeed + buildWorld + domain/selectors; synthetic demo scenarios, not real user data",
+  "scenarios": [
+    {
+      "name": "Ongoing",
+      "seedThrough": 22,
+      "now": "2026-09-08T08:00:00.000Z",
+      "state": "ongoing",
+      "progress": {
+        "day": 23,
+        "checkins": 20,
+        "filled": 21,
+        "passes": 1,
+        "passesLeft": 2,
+        "lates": 2,
+        "simples": 3,
+        "privates": 2,
+        "streak": 9,
+        "bestStreak": 12,
+        "remaining": 45,
+        "percent": 32
+      },
+      "availability": {
+        "ok": true,
+        "cohortDay": 23,
+        "late": false
+      },
+      "participation": {
+        "day": 23,
+        "done": 22,
+        "late": 3,
+        "dormant": 1,
+        "pending": 7,
+        "total": 30
+      },
+      "outcome": {
+        "members": 30,
+        "stayedToEnd": 0,
+        "filled66": 0,
+        "perfect66": 0,
+        "meanFilled": 15.8
+      },
+      "achievement": {
+        "filled66": false,
+        "stayedToEnd": false,
+        "perfect66": false
+      },
+      "feed": [
+        {
+          "id": "sim-ms-c-reading-0817-0-23",
+          "membershipId": "ms-c-reading-0817-0",
+          "cohortDay": 23,
+          "createdAt": "2026-09-08T08:17:00.000Z",
+          "text": "새벽에 겨우 폈다. 늦었지만 안 빠졌다",
+          "visibility": "cohort"
+        },
+        {
+          "id": "sim-ms-c-reading-0817-1-23",
+          "membershipId": "ms-c-reading-0817-1",
+          "cohortDay": 23,
+          "createdAt": "2026-09-08T10:04:00.000Z",
+          "text": "출근길 15분, 어제 멈춘 문장부터",
+          "photoRef": "habit-stretch",
+          "visibility": "cohort"
+        }
+      ]
+    },
+    {
+      "name": "Done",
+      "seedThrough": 23,
+      "now": "2026-09-08T13:00:00.000Z",
+      "state": "done",
+      "progress": {
+        "day": 23,
+        "checkins": 21,
+        "filled": 22,
+        "passes": 1,
+        "passesLeft": 2,
+        "lates": 2,
+        "simples": 3,
+        "privates": 2,
+        "streak": 10,
+        "bestStreak": 12,
+        "remaining": 44,
+        "percent": 33
+      },
+      "availability": {
+        "ok": false,
+        "reason": "filled",
+        "cohortDay": 23
+      },
+      "participation": {
+        "day": 23,
+        "done": 23,
+        "late": 3,
+        "dormant": 1,
+        "pending": 6,
+        "total": 30
+      },
+      "outcome": {
+        "members": 30,
+        "stayedToEnd": 0,
+        "filled66": 0,
+        "perfect66": 0,
+        "meanFilled": 15.833333333333334
+      },
+      "achievement": {
+        "filled66": false,
+        "stayedToEnd": false,
+        "perfect66": false
+      },
+      "feed": [
+        {
+          "id": "ck-me-seed-23",
+          "membershipId": "ms-me",
+          "cohortDay": 23,
+          "createdAt": "2026-09-08T12:10:00.000Z",
+          "text": "오늘도 읽었다",
+          "visibility": "cohort",
+          "photoRef": "habit-water"
+        },
+        {
+          "id": "sim-ms-c-reading-0817-0-23",
+          "membershipId": "ms-c-reading-0817-0",
+          "cohortDay": 23,
+          "createdAt": "2026-09-08T08:17:00.000Z",
+          "text": "새벽에 겨우 폈다. 늦었지만 안 빠졌다",
+          "visibility": "cohort"
+        }
+      ]
+    },
+    {
+      "name": "Broken",
+      "seedThrough": 21,
+      "now": "2026-09-08T08:00:00.000Z",
+      "state": "broken",
+      "progress": {
+        "day": 23,
+        "checkins": 19,
+        "filled": 20,
+        "passes": 1,
+        "passesLeft": 2,
+        "lates": 2,
+        "simples": 3,
+        "privates": 2,
+        "streak": 0,
+        "bestStreak": 12,
+        "remaining": 46,
+        "percent": 30
+      },
+      "availability": {
+        "ok": true,
+        "cohortDay": 23,
+        "late": false
+      },
+      "participation": {
+        "day": 23,
+        "done": 22,
+        "late": 3,
+        "dormant": 1,
+        "pending": 7,
+        "total": 30
+      },
+      "outcome": {
+        "members": 30,
+        "stayedToEnd": 0,
+        "filled66": 0,
+        "perfect66": 0,
+        "meanFilled": 15.766666666666667
+      },
+      "achievement": {
+        "filled66": false,
+        "stayedToEnd": false,
+        "perfect66": false
+      },
+      "feed": [
+        {
+          "id": "sim-ms-c-reading-0817-0-23",
+          "membershipId": "ms-c-reading-0817-0",
+          "cohortDay": 23,
+          "createdAt": "2026-09-08T08:17:00.000Z",
+          "text": "새벽에 겨우 폈다. 늦었지만 안 빠졌다",
+          "visibility": "cohort"
+        },
+        {
+          "id": "sim-ms-c-reading-0817-1-23",
+          "membershipId": "ms-c-reading-0817-1",
+          "cohortDay": 23,
+          "createdAt": "2026-09-08T10:04:00.000Z",
+          "text": "출근길 15분, 어제 멈춘 문장부터",
+          "photoRef": "habit-stretch",
+          "visibility": "cohort"
+        }
+      ]
+    },
+    {
+      "name": "Dormant",
+      "seedThrough": 15,
+      "now": "2026-09-08T08:00:00.000Z",
+      "state": "dormant",
+      "progress": {
+        "day": 23,
+        "checkins": 13,
+        "filled": 14,
+        "passes": 1,
+        "passesLeft": 2,
+        "lates": 1,
+        "simples": 1,
+        "privates": 1,
+        "streak": 0,
+        "bestStreak": 12,
+        "remaining": 52,
+        "percent": 21
+      },
+      "availability": {
+        "ok": true,
+        "cohortDay": 23,
+        "late": false
+      },
+      "participation": {
+        "day": 23,
+        "done": 22,
+        "late": 3,
+        "dormant": 2,
+        "pending": 6,
+        "total": 30
+      },
+      "outcome": {
+        "members": 30,
+        "stayedToEnd": 0,
+        "filled66": 0,
+        "perfect66": 0,
+        "meanFilled": 15.566666666666666
+      },
+      "achievement": {
+        "filled66": false,
+        "stayedToEnd": false,
+        "perfect66": false
+      },
+      "feed": [
+        {
+          "id": "sim-ms-c-reading-0817-0-23",
+          "membershipId": "ms-c-reading-0817-0",
+          "cohortDay": 23,
+          "createdAt": "2026-09-08T08:17:00.000Z",
+          "text": "새벽에 겨우 폈다. 늦었지만 안 빠졌다",
+          "visibility": "cohort"
+        },
+        {
+          "id": "sim-ms-c-reading-0817-1-23",
+          "membershipId": "ms-c-reading-0817-1",
+          "cohortDay": 23,
+          "createdAt": "2026-09-08T10:04:00.000Z",
+          "text": "출근길 15분, 어제 멈춘 문장부터",
+          "photoRef": "habit-stretch",
+          "visibility": "cohort"
+        }
+      ]
+    },
+    {
+      "name": "Returned",
+      "seedThrough": 15,
+      "now": "2026-09-08T08:00:00.000Z",
+      "state": "done",
+      "progress": {
+        "day": 23,
+        "checkins": 14,
+        "filled": 15,
+        "passes": 1,
+        "passesLeft": 2,
+        "lates": 1,
+        "simples": 2,
+        "privates": 1,
+        "streak": 1,
+        "bestStreak": 12,
+        "remaining": 51,
+        "percent": 23
+      },
+      "availability": {
+        "ok": false,
+        "reason": "filled",
+        "cohortDay": 23
+      },
+      "participation": {
+        "day": 23,
+        "done": 23,
+        "late": 3,
+        "dormant": 1,
+        "pending": 6,
+        "total": 30
+      },
+      "outcome": {
+        "members": 30,
+        "stayedToEnd": 0,
+        "filled66": 0,
+        "perfect66": 0,
+        "meanFilled": 15.6
+      },
+      "achievement": {
+        "filled66": false,
+        "stayedToEnd": false,
+        "perfect66": false
+      },
+      "feed": [
+        {
+          "id": "design-return-23",
+          "membershipId": "ms-me",
+          "cohortDay": 23,
+          "createdAt": "2026-09-08T08:00:00.000Z",
+          "text": "오늘 다시 책을 폈어요",
+          "visibility": "cohort"
+        },
+        {
+          "id": "sim-ms-c-reading-0817-0-23",
+          "membershipId": "ms-c-reading-0817-0",
+          "cohortDay": 23,
+          "createdAt": "2026-09-08T08:17:00.000Z",
+          "text": "새벽에 겨우 폈다. 늦었지만 안 빠졌다",
+          "visibility": "cohort"
+        }
+      ]
+    },
+    {
+      "name": "Ended",
+      "seedThrough": 60,
+      "now": "2026-10-22T08:00:00.000Z",
+      "state": "ended",
+      "progress": {
+        "day": 67,
+        "checkins": 58,
+        "filled": 59,
+        "passes": 1,
+        "passesLeft": 2,
+        "lates": 2,
+        "simples": 3,
+        "privates": 2,
+        "streak": 0,
+        "bestStreak": 47,
+        "remaining": 7,
+        "percent": 89
+      },
+      "availability": {
+        "ok": false,
+        "reason": "ended",
+        "cohortDay": 66
+      },
+      "participation": {
+        "day": 67,
+        "done": 0,
+        "late": 0,
+        "dormant": 3,
+        "pending": 27,
+        "total": 30
+      },
+      "outcome": {
+        "members": 30,
+        "stayedToEnd": 27,
+        "filled66": 0,
+        "perfect66": 0,
+        "meanFilled": 40.13333333333333
+      },
+      "achievement": {
+        "filled66": false,
+        "stayedToEnd": true,
+        "perfect66": false
+      },
+      "feed": []
+    }
+  ]
+}

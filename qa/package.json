@@ -6,7 +6,11 @@
     "test": "playwright test",
     "test:headed": "playwright test --headed",
     "report": "playwright show-report",
-    "update-snapshots": "playwright test --update-snapshots"
+    "update-snapshots": "playwright test --update-snapshots",
+    "test:v2": "npm run test:v2:activity && npm run test:v2:notifications && npm run test:v2:admin",
+    "test:v2:activity": "node scripts/activity-mobile.cjs",
+    "test:v2:notifications": "node scripts/notifications-mobile.cjs",
+    "test:v2:admin": "node scripts/admin-mobile.cjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0"

@@ -1,0 +1,4817 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SIXTYSIX API",
+    "version": "0.2.0",
+    "description": "구현 전 계약. B0 로그인 2종/공개 모집 반영. 서버 시간 권위, unknown request fields 거부, 업무 성공 쓰기만 멱등 캐시. 세부 권장 정책은 BACKEND-B0-SPEC.md 참조. 인증 cookie 실제 이름은 T03 adapter에서 고정. 모든 보호/인증 응답 Cache-Control: no-store."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "동일 origin /v1 프록시; 배포 미구현"
+    }
+  ],
+  "security": [
+    {
+      "sessionCookie": []
+    }
+  ],
+  "paths": {
+    "/v1/auth/context": {
+      "get": {
+        "operationId": "authContext",
+        "summary": "브라우저 CSRF 문맥",
+        "tags": [
+          "auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthContext"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "익명 브라우저 문맥 또는 기존 세션에 결합. Cache-Control: no-store.",
+        "security": []
+      }
+    },
+    "/v1/auth/code": {
+      "post": {
+        "operationId": "sendCode",
+        "summary": "이메일 로그인 인증번호 요청",
+        "tags": [
+          "auth"
+        ],
+        "responses": {
+          "202": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CodeAccepted"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "존재 여부와 무관한 202 형태·안내. 이메일은 소문자 정규화하며 IP/이메일/브라우저별 DB rate limit 적용. 6자리·5분·오답 3회. 공급자 수락 후 202, 수락은 실제 배달 보장이 아님. 기존 challenge 재사용 금지. Origin/CSRF 실패는 403.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254
+                  }
+                },
+                "required": [
+                  "email"
+                ]
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/v1/auth/verify": {
+      "post": {
+        "operationId": "verifyCode",
+        "summary": "인증번호 검증",
+        "tags": [
+          "auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "challenge에 저장된 목적·브라우저·사용자·intent를 사용. reauth/link는 시작한 현재 세션 필수. 로그인 성공은 세션 cookie 설정, reauth는 동일 사용자만 fresh 갱신, link는 서버의 intent 검증 상태만 갱신. code 실패는 계정 존재를 밝히지 않는 INVALID_CHALLENGE.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "challengeId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "code": {
+                    "type": "string",
+                    "pattern": "^[0-9]{6}$"
+                  }
+                },
+                "required": [
+                  "challengeId",
+                  "code"
+                ]
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/v1/auth/kakao/start": {
+      "get": {
+        "operationId": "kakaoStart",
+        "summary": "카카오 인증 시작",
+        "tags": [
+          "auth"
+        ],
+        "responses": {
+          "302": {
+            "description": "성공",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "description": "허용된 Kakao authorize URL"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "intentId 없으면 로그인. 있으면 현재 세션의 link/reauth intent만 허용. 목적·브라우저에 결합된 state를 생성. state 저장 실패 시 redirect하지 않음. state hash·5분 만료·S256 PKCE 적용. reauth에는 prompt=login. 알려진 카카오 인앱 브라우저의 reauth 시작은 403. intent당 state 하나만 발급하며 재시작은 새 intent로 진행.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "returnTo",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "/home",
+                "/my",
+                "/onboarding"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "intentId",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "security": []
+      }
+    },
+    "/v1/auth/kakao/callback": {
+      "get": {
+        "operationId": "kakaoCallback",
+        "summary": "카카오 인증 callback",
+        "tags": [
+          "auth"
+        ],
+        "responses": {
+          "302": {
+            "description": "성공",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "allowlist 서비스 화면. 새 세션은 로그인 성공에만 설정"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "code 또는 error 중 하나. state 일회성·목적·브라우저·intent 소유권 검사 후 서버 token 교환. providerSubject로 조회, 이메일만으로 병합하지 않음. 실패는 고정 서비스 화면의 공개 오류 코드로 redirect. 원문 provider 오류/token을 URL에 전달하지 않음.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "state",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "code",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "error",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "error_description",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 2048
+            },
+            "description": "공급자 호환성용 입력. 저장·로그·반환하지 않음."
+          }
+        ],
+        "security": []
+      }
+    },
+    "/v1/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "summary": "현재 세션 폐기",
+        "tags": [
+          "auth"
+        ],
+        "responses": {
+          "204": {
+            "description": "성공"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "브라우저 쿠키도 만료. 이미 로그아웃한 문맥도 CSRF 검사 후 204.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "security": []
+      }
+    },
+    "/v1/me/reauth-intents": {
+      "post": {
+        "operationId": "createReauthIntent",
+        "summary": "기존 로그인 수단으로 재인증 시작",
+        "tags": [
+          "me"
+        ],
+        "responses": {
+          "201": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Intent"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "본인 소유의 사용 가능한 identity만 허용. callback/OTP 완료는 동일 user+session만 갱신. 다른 계정 로그인으로 교체하지 않음.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "identityId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "identityId"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/identities/link-intents": {
+      "post": {
+        "operationId": "createLinkIntent",
+        "summary": "로그인 수단 연결 시작",
+        "tags": [
+          "me"
+        ],
+        "responses": {
+          "201": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Intent"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "최근 5분 내 기존 수단 재인증 필수. 이메일이면 OTP challenge, 카카오면 redirect URL. 타 계정에 연결된 수단은 연결 완료 때 409.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "provider": {
+                        "type": "string",
+                        "enum": [
+                          "email"
+                        ]
+                      },
+                      "email": {
+                        "type": "string",
+                        "format": "email",
+                        "maxLength": 254
+                      }
+                    },
+                    "required": [
+                      "provider",
+                      "email"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "provider": {
+                        "type": "string",
+                        "enum": [
+                          "kakao"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "provider"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/identities/link-intents/{intentId}/complete": {
+      "post": {
+        "operationId": "completeLink",
+        "summary": "검증 완료된 수단 연결",
+        "tags": [
+          "me"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Identity"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "현재 user/session에 결합된 만료 전 서버 검증 intent를 원자적으로 소비. 클라이언트 verified 플래그나 providerSubject를 받지 않음. 기존 계정·기록 합병 없음.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "intentId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/identities/{identityId}": {
+      "delete": {
+        "operationId": "unlinkIdentity",
+        "summary": "로그인 수단 해제",
+        "tags": [
+          "me"
+        ],
+        "responses": {
+          "204": {
+            "description": "성공"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "최근 5분 재인증, 사용자 잠금, 다른 사용 가능한 로그인 수단 존재 확인. 라이브러리 account 행 개수만 세지 않음.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "identityId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ]
+      }
+    },
+    "/v1/me": {
+      "get": {
+        "operationId": "getMe",
+        "summary": "내 계정·현재 참여",
+        "tags": [
+          "me"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      }
+    },
+    "/v1/me/profile": {
+      "patch": {
+        "operationId": "updateProfile",
+        "summary": "이름 수정",
+        "tags": [
+          "me"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/Idempotency"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "displayName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  }
+                },
+                "required": [
+                  "displayName"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/preferences": {
+      "patch": {
+        "operationId": "updatePreferences",
+        "summary": "이후 인증의 기본 공개 범위",
+        "tags": [
+          "me"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Preferences"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/Idempotency"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Preferences"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/habits": {
+      "get": {
+        "operationId": "listHabits",
+        "summary": "습관 카탈로그",
+        "tags": [
+          "habits"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Habit"
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "security": []
+      }
+    },
+    "/v1/sample-photos": {
+      "get": {
+        "operationId": "listPhotos",
+        "summary": "승인된 샘플 사진",
+        "tags": [
+          "sample-photos"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SamplePhoto"
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      }
+    },
+    "/v1/cohorts": {
+      "get": {
+        "operationId": "listCohorts",
+        "summary": "공개 모집 목록",
+        "tags": [
+          "cohorts"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CohortPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "시작 전 예정/모집 코호트 목록. startsAt ASC,id ASC 커서, 실제 참여 인원 사용. 인증 요청의 canJoin은 개인 슬롯 및 동일 기수 취소 이력을 반영한다. 비회원 canJoin은 모집 조건이며 실제 참여에는 로그인이 필요하다.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "habitId",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "security": []
+      }
+    },
+    "/v1/cohorts/{cohortId}": {
+      "get": {
+        "operationId": "getCohort",
+        "summary": "공개 코호트 상세",
+        "tags": [
+          "cohorts"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Cohort"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohortId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "security": []
+      }
+    },
+    "/v1/memberships": {
+      "post": {
+        "operationId": "joinCohort",
+        "summary": "코호트 참여",
+        "tags": [
+          "memberships"
+        ],
+        "responses": {
+          "201": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Membership"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/Idempotency"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "cohortId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "cohortId"
+                ]
+              }
+            }
+          }
+        },
+        "description": "시작 전, 정원 및 활성/대기 슬롯 1개 조건을 확인한다. 취소한 동일 기수 재참여는 JOIN_CLOSED. 동일 키 성공은 원래 응답을 반환하며 변경된 입력/경로로 키를 재사용하면 IDEMPOTENCY_CONFLICT. 계정별로 네 업무 쓰기가 한도를 공유한다. 새 요청과 업무 거부/키 충돌은 분당 20회·시간당 120회, 성공 응답의 동일 키·내용 재조회는 별도 분당 60회. 한도 초과는 429 RATE_LIMITED와 초 단위 Retry-After를 반환하며 업무 변경은 없다. 정상 재조회는 새 요청 한도를 소모하지 않는다."
+      }
+    },
+    "/v1/memberships/{membershipId}/cancel": {
+      "post": {
+        "operationId": "cancelMembership",
+        "summary": "시작 전 참여 취소",
+        "tags": [
+          "memberships"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Membership"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "본인의 시작 전 참여만 취소한다. 취소 사실과 슬롯 해제·감사·멱등 성공을 함께 저장한다. 동일 기수 재참여 불가. 이미 성공한 키는 시작 이후에도 원래 성공을 반환한다. leave 명령은 아직 미구현. 계정별로 네 업무 쓰기가 한도를 공유한다. 새 요청과 업무 거부/키 충돌은 분당 20회·시간당 120회, 성공 응답의 동일 키·내용 재조회는 별도 분당 60회. 한도 초과는 429 RATE_LIMITED와 초 단위 Retry-After를 반환하며 업무 변경은 없다. 정상 재조회는 새 요청 한도를 소모하지 않는다.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "membershipId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/Idempotency"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "confirm": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ]
+                  }
+                },
+                "required": [
+                  "confirm"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/memberships/{membershipId}/leave": {
+      "post": {
+        "operationId": "leaveMembership",
+        "summary": "시작 후 중도 이탈",
+        "tags": [
+          "memberships"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Membership"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "cancel은 시작 전, leave는 시작 후에만 허용. leave 후 슬롯은 최종 접수 종료까지 유지한다는 B0 권장안 적용 예정.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "membershipId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/Idempotency"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "confirm": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ]
+                  }
+                },
+                "required": [
+                  "confirm"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/memberships/{membershipId}/home": {
+      "get": {
+        "operationId": "getHome",
+        "summary": "내 홈 판정·요약",
+        "tags": [
+          "memberships"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Home"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "소유자만. 단일 snapshot/serverNow 사용. cancelled/left는 availability false, action으로 다음 동작 안내. 종료 state라도 마지막 late window가 열려 있으면 LATE_CHECKIN.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "membershipId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/memberships/{membershipId}/checkins": {
+      "post": {
+        "operationId": "createCheckin",
+        "summary": "한 줄 인증 저장",
+        "tags": [
+          "memberships"
+        ],
+        "responses": {
+          "201": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "unknown field 거부. targetDay 또는 late가 달라지면 409 TARGET_CHANGED + details.availability. 원래 입력 유지 후 새 키로 재확인. 성공 재시도는 원래 응답 반환. 계정별로 네 업무 쓰기가 한도를 공유한다. 새 요청과 업무 거부/키 충돌은 분당 20회·시간당 120회, 성공 응답의 동일 키·내용 재조회는 별도 분당 60회. 한도 초과는 429 RATE_LIMITED와 초 단위 Retry-After를 반환하며 업무 변경은 없다. 정상 재조회는 새 요청 한도를 소모하지 않는다.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "membershipId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/Idempotency"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "서버에서 JS trim 후 UTF-16 1~40단위. emoji는 2단위일 수 있음.",
+                    "x-utf16-max-length": 40
+                  },
+                  "samplePhotoRef": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "visibility": {
+                    "type": "string",
+                    "enum": [
+                      "cohort",
+                      "private"
+                    ]
+                  },
+                  "expectedTargetDay": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 66
+                  },
+                  "expectedLate": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "text",
+                  "samplePhotoRef",
+                  "visibility",
+                  "expectedTargetDay",
+                  "expectedLate"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/memberships/{membershipId}/passes": {
+      "post": {
+        "operationId": "usePass",
+        "summary": "면제권 사용",
+        "tags": [
+          "memberships"
+        ],
+        "responses": {
+          "201": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "인증과 같은 접수 창. 멤버십 잠금 안에서 총 3회 검사. 같은 날 인증/면제 중 하나만. 계정별로 네 업무 쓰기가 한도를 공유한다. 새 요청과 업무 거부/키 충돌은 분당 20회·시간당 120회, 성공 응답의 동일 키·내용 재조회는 별도 분당 60회. 한도 초과는 429 RATE_LIMITED와 초 단위 Retry-After를 반환하며 업무 변경은 없다. 정상 재조회는 새 요청 한도를 소모하지 않는다.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "membershipId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/Idempotency"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "expectedTargetDay": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 66
+                  },
+                  "expectedLate": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "expectedTargetDay",
+                  "expectedLate"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/memberships/{membershipId}/record": {
+      "get": {
+        "operationId": "getRecord",
+        "summary": "내 66일 기록",
+        "tags": [
+          "memberships"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Record"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "이탈 후에도 본인만 열람. 날짜 칸은 정확히 66개, 실제 일차 67 이상이어도 늘어나지 않음.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "membershipId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/memberships/{membershipId}/outcome": {
+      "get": {
+        "operationId": "getOutcome",
+        "summary": "내 결과·코호트 집계",
+        "tags": [
+          "memberships"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Outcome"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "isFinal은 serverNow > finalSubmissionAt. 기간 종료와 filled66/perfect66/stayedToEnd를 구분. 이탈자 타인 집계 접근 범위는 운영 정책 확정 후 제한.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "membershipId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/cohorts/{cohortId}/feed": {
+      "get": {
+        "operationId": "getFeed",
+        "summary": "같은 코호트 공개 피드",
+        "tags": [
+          "cohorts"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "같은 코호트 유효 멤버만. 비공개·hidden·이탈/삭제 계정 항목 제외. createdAt DESC,id DESC 안정 커서. ended 멤버 열람 보관 기간은 미확정.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohortId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "query",
+            "name": "day",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 66
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ]
+      }
+    },
+    "/v1/cohorts/{cohortId}/members": {
+      "get": {
+        "operationId": "getMembers",
+        "summary": "코호트 참여·순위",
+        "tags": [
+          "cohorts"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "serverNow": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/MemberRow"
+                      },
+                      "maxItems": 30
+                    }
+                  },
+                  "required": [
+                    "serverNow",
+                    "items"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "실제 인증 수로 순위. 면제는 checkins에 더하지 않음. 비공개 본문/사진 없음. 이탈/삭제 계정 식별 정보 제외.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohortId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/checkins/{checkinId}/visibility": {
+      "patch": {
+        "operationId": "setVisibility",
+        "summary": "내 인증 공개 범위 변경",
+        "tags": [
+          "checkins"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Checkin"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "소유자만. hidden 해제 불가. 저장 후 feed/record/home/members 재조회. 본문·사진·날짜 수정은 첫 범위 제외.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "checkinId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/Idempotency"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "visibility": {
+                    "type": "string",
+                    "enum": [
+                      "cohort",
+                      "private"
+                    ]
+                  }
+                },
+                "required": [
+                  "visibility"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/deletion-requests": {
+      "post": {
+        "operationId": "requestDeletion",
+        "summary": "계정 탈퇴 요청",
+        "tags": [
+          "me"
+        ],
+        "responses": {
+          "202": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletionRequest"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "최근 재인증 필수. 계정 접근·공개 노출 중단 및 outbox 저장을 원자적으로 처리하고 모든 세션 폐기. 삭제 완료를 202로 약속하지 않음. 재로그인 없이 확인할 상태 URL은 발급하지 않음.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/Idempotency"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "confirm": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ]
+                  }
+                },
+                "required": [
+                  "confirm"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/reports": {
+      "post": {
+        "operationId": "createReport",
+        "summary": "신고 접수",
+        "tags": [
+          "reports"
+        ],
+        "responses": {
+          "201": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Report"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "대상 접근 가능 여부 검사. 자신이 신고한 요청만 조회. 인증 내용은 일반 신고 응답에 복제하지 않음.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/Idempotency"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "checkinId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 1000
+                      }
+                    },
+                    "required": [
+                      "checkinId",
+                      "reason"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "userId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 1000
+                      }
+                    },
+                    "required": [
+                      "userId",
+                      "reason"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/reports/{reportId}": {
+      "get": {
+        "operationId": "getReport",
+        "summary": "내 신고 상태",
+        "tags": [
+          "reports"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Report"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reportId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/support-requests": {
+      "post": {
+        "operationId": "createSupport",
+        "summary": "회원 문의",
+        "tags": [
+          "support-requests"
+        ],
+        "responses": {
+          "201": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Support"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/Idempotency"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "body": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "body"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/support-requests/{supportId}": {
+      "get": {
+        "operationId": "getSupport",
+        "summary": "내 문의 상태",
+        "tags": [
+          "support-requests"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Support"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "supportId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/public/support-requests": {
+      "post": {
+        "operationId": "createPublicSupport",
+        "summary": "비로그인 로그인 문제 문의",
+        "tags": [
+          "public"
+        ],
+        "responses": {
+          "202": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "익명 CSRF+IP/이메일 rate limit, 계정 존재와 무관한 안내. 메일 소유권을 계정 복구 증거로 쓰지 않음. 공개 조회 경로 없음.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Csrf"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254
+                  },
+                  "body": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "email",
+                  "body"
+                ]
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/v1/admin/cohorts": {
+      "post": {
+        "operationId": "createCohort",
+        "summary": "운영자 모집 개설",
+        "tags": [
+          "Operations"
+        ],
+        "responses": {
+          "201": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Cohort"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "시작일 04:00 KST 계산, 모집 시작 < 시작 시각, minParticipants <= capacity. 최소 10은 권장값이며 기본값으로 강제하지 않음. 최근 재인증+감사 기록. admin 권한·세션·최근 5분 재인증은 성공 응답 재조회 때도 확인한다. 일반 업무와 동일한 멱등 키 공간/계정별 한도를 사용한다. 성공 상태·감사·멱등 응답은 같은 transaction이며 취소는 내부 알림 outbox도 함께 저장한다.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/Idempotency"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "habitId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "policyVersion": {
+                    "type": "integer",
+                    "enum": [
+                      1
+                    ]
+                  },
+                  "generation": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "recruitmentOpensAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "capacity": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 30
+                  },
+                  "minParticipants": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 30
+                  }
+                },
+                "required": [
+                  "habitId",
+                  "policyVersion",
+                  "generation",
+                  "startDate",
+                  "recruitmentOpensAt",
+                  "capacity",
+                  "minParticipants"
+                ]
+              }
+            }
+          }
+        },
+        "x-required-role": "admin"
+      },
+      "get": {
+        "operationId": "listAdminCohorts",
+        "summary": "운영자 모집 목록",
+        "tags": [
+          "Operations"
+        ],
+        "description": "admin 역할만 허용. 재인증 없이 조회 가능, 시작일·ID 내림차순 최대 50개와 nextCursor를 반환한다. 조회 시 필요한 시작 판단을 수행한다.",
+        "x-required-role": "admin",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 256
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "운영 모집 목록",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "items",
+                    "nextCursor"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "maxItems": 50,
+                      "items": {
+                        "$ref": "#/components/schemas/Cohort"
+                      }
+                    },
+                    "nextCursor": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      }
+    },
+    "/v1/admin/cohorts/{cohortId}/cancel": {
+      "post": {
+        "operationId": "cancelCohort",
+        "summary": "운영자 코호트 취소",
+        "tags": [
+          "Operations"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Cohort"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "최근 재인증+감사+참여자 안내 outbox. 시작 전 모집 취소만 첫 범위. 시작 후 긴급 중단은 별도 정책/명령 필요. admin 권한·세션·최근 5분 재인증은 성공 응답 재조회 때도 확인한다. 일반 업무와 동일한 멱등 키 공간/계정별 한도를 사용한다. 성공 상태·감사·멱등 응답은 같은 transaction이며 취소는 내부 알림 outbox도 함께 저장한다.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohortId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/Idempotency"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "reason"
+                ]
+              }
+            }
+          }
+        },
+        "x-required-role": "admin"
+      }
+    },
+    "/v1/admin/reports": {
+      "get": {
+        "operationId": "listReports",
+        "summary": "운영 신고 큐",
+        "tags": [
+          "Operations"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminReportPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "resolved",
+                "dismissed"
+              ]
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "x-required-role": "moderator"
+      }
+    },
+    "/v1/admin/reports/{reportId}": {
+      "patch": {
+        "operationId": "resolveReport",
+        "summary": "신고 처리 상태 변경",
+        "tags": [
+          "Operations"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Report"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "감사 기록. 콘텐츠 숨김/계정 정지는 별도 명령; 처리 완료만으로 자동 제재하지 않음.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reportId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/Idempotency"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "resolved",
+                      "dismissed"
+                    ]
+                  },
+                  "reasonCode": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "status",
+                  "reasonCode"
+                ]
+              }
+            }
+          }
+        },
+        "x-required-role": "moderator"
+      }
+    },
+    "/v1/admin/support-requests": {
+      "get": {
+        "operationId": "listSupport",
+        "summary": "운영 문의 큐",
+        "tags": [
+          "Operations"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSupportPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "x-required-role": "moderator"
+      }
+    },
+    "/v1/admin/support-requests/{supportId}": {
+      "patch": {
+        "operationId": "resolveSupport",
+        "summary": "문의 처리 완료",
+        "tags": [
+          "Operations"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Support"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "감사 기록. 답변 발송은 별도 운영 채널로 처리하고 발송 이력을 남긴다. 이 명령 자체는 이메일 발송을 의미하지 않음.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "supportId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/Idempotency"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "resolved"
+                    ]
+                  },
+                  "reasonCode": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "status",
+                  "reasonCode"
+                ]
+              }
+            }
+          }
+        },
+        "x-required-role": "moderator"
+      }
+    },
+    "/v1/admin/checkins/{checkinId}/moderation": {
+      "patch": {
+        "operationId": "moderateCheckin",
+        "summary": "공개 노출 중단·복원",
+        "tags": [
+          "Operations"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "hidden": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "hidden"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "감사 기록. 숨김은 사실 삭제/인증 수 차감이 아님. 원래 private인 항목은 복원해도 공개되지 않음.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "checkinId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/Idempotency"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "hidden": {
+                    "type": "boolean"
+                  },
+                  "reasonCode": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "hidden",
+                  "reasonCode"
+                ]
+              }
+            }
+          }
+        },
+        "x-required-role": "moderator"
+      }
+    },
+    "/v1/admin/users/{userId}/suspension": {
+      "patch": {
+        "operationId": "suspendUser",
+        "summary": "계정 정지·복원",
+        "tags": [
+          "Operations"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "suspended": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "suspended"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "최근 재인증+감사. 정지 시 세션 폐기 및 후속 접근 차단. 탈퇴 계정을 복원하지 않음. 최초 운영 권한은 배포 절차에서 별도 부여.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/Idempotency"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "suspended": {
+                    "type": "boolean"
+                  },
+                  "reasonCode": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "suspended",
+                  "reasonCode"
+                ]
+              }
+            }
+          }
+        },
+        "x-required-role": "admin"
+      }
+    },
+    "/v1/admin/deletion-requests": {
+      "get": {
+        "operationId": "listDeletions",
+        "summary": "탈퇴 작업 조회",
+        "tags": [
+          "Operations"
+        ],
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletionPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "x-required-role": "moderator"
+      }
+    },
+    "/v1/admin/deletion-requests/{deletionId}/retry": {
+      "post": {
+        "operationId": "retryDeletion",
+        "summary": "실패한 탈퇴 작업 재시도",
+        "tags": [
+          "Operations"
+        ],
+        "responses": {
+          "202": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletionRequest"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "409": {
+            "$ref": "#/components/responses/409"
+          },
+          "429": {
+            "$ref": "#/components/responses/429"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        },
+        "description": "failed 상태만 허용, 최근 재인증+감사. outbox 재등록, 즉시 완료 아님. 동일 key 중복 재등록 방지.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deletionId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Csrf"
+          },
+          {
+            "$ref": "#/components/parameters/Idempotency"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "reasonCode": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "reasonCode"
+                ]
+              }
+            }
+          }
+        },
+        "x-required-role": "admin"
+      }
+    },
+    "/v1/health": {
+      "get": {
+        "operationId": "health",
+        "summary": "API 프로세스 생존 확인. DB 준비 상태와 별개.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "정상",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "status"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "ok"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      }
+    },
+    "/v1/ready": {
+      "get": {
+        "operationId": "ready",
+        "summary": "DB 연결과 업무 테이블 존재 확인. DB 미설정/장애는 503.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "정상",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "status"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "ok"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      }
+    },
+    "/v1/me/notifications": {
+      "get": {
+        "operationId": "listMyNotifications",
+        "summary": "내 운영 알림",
+        "description": "현재 계정의 코호트 시작·모집 취소 알림을 최신순 최대 50개 반환한다. query parameter는 허용하지 않으며 다른 계정 ID를 받지 않는다. Cache-Control: no-store.",
+        "responses": {
+          "200": {
+            "description": "최근 알림",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "items"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "maxItems": 50,
+                      "items": {
+                        "$ref": "#/components/schemas/Notification"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "503": {
+            "$ref": "#/components/responses/503"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "__Host-sixtysix.session",
+        "description": "HTTPS: __Host-sixtysix.session, Path=/·HttpOnly·Secure·SameSite=Lax·Domain 없음. 로컬 HTTP만 sixtysix.session. DB에는 토큰 SHA-256만 저장, 개발 기본 절대 만료 7일."
+      }
+    },
+    "parameters": {
+      "Idempotency": {
+        "in": "header",
+        "name": "Idempotency-Key",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "description": "같은 동작의 네트워크 재시도는 같은 UUID, 변경된 입력은 새 UUID. method/path/body를 요청 hash에 포함."
+      },
+      "Csrf": {
+        "in": "header",
+        "name": "X-CSRF-Token",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "GET /v1/auth/context 발급값. 브라우저/세션에 결합, Origin 검사와 함께 사용."
+      },
+      "Cursor": {
+        "in": "query",
+        "name": "cursor",
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "Limit": {
+        "in": "query",
+        "name": "limit",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50,
+          "default": 20
+        }
+      }
+    },
+    "responses": {
+      "400": {
+        "description": "입력 또는 인증 challenge/state 오류",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "유효 세션 없음",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "403": {
+        "description": "운영 권한 부족 또는 REAUTH_REQUIRED",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "404": {
+        "description": "없거나 접근 불가한 업무 리소스",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "409": {
+        "description": "업무/멱등/연결 충돌",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "429": {
+        "description": "속도 제한",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        },
+        "headers": {
+          "Retry-After": {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]+$"
+            },
+            "description": "재시도까지 초"
+          }
+        }
+      },
+      "503": {
+        "description": "일시 장애",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Identity": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "email",
+              "kakao"
+            ]
+          },
+          "label": {
+            "type": "string",
+            "description": "본인에게만 보이는 마스킹된 식별자"
+          },
+          "usable": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "provider",
+          "label",
+          "usable"
+        ]
+      },
+      "Profile": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          }
+        },
+        "required": [
+          "id",
+          "displayName"
+        ]
+      },
+      "Preferences": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "defaultVisibility": {
+            "type": "string",
+            "enum": [
+              "cohort",
+              "private"
+            ]
+          }
+        },
+        "required": [
+          "defaultVisibility"
+        ]
+      },
+      "Membership": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cohortId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "joinedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "cancelledAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "leftAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "cohortId",
+          "joinedAt",
+          "cancelledAt",
+          "leftAt"
+        ]
+      },
+      "Me": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/Profile"
+          },
+          "identities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Identity"
+            }
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/Preferences"
+          },
+          "memberships": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Membership"
+            }
+          },
+          "currentMembershipId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        },
+        "required": [
+          "profile",
+          "identities",
+          "preferences",
+          "memberships",
+          "currentMembershipId"
+        ]
+      },
+      "Habit": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "shortName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "goal": {
+            "type": "string",
+            "minLength": 1
+          },
+          "imageRef": {
+            "type": "string",
+            "minLength": 1
+          },
+          "timeOfDay": {
+            "type": "string",
+            "enum": [
+              "morning",
+              "evening"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "shortName",
+          "goal",
+          "imageRef",
+          "timeOfDay"
+        ]
+      },
+      "SamplePhoto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "ref": {
+            "type": "string",
+            "minLength": 1
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "alt": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "ref",
+          "url",
+          "alt"
+        ]
+      },
+      "Cohort": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "habitId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "generation": {
+            "type": "string",
+            "minLength": 1
+          },
+          "policyVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "durationDays": {
+            "type": "integer",
+            "enum": [
+              66
+            ]
+          },
+          "capacity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 30
+          },
+          "minParticipants": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 30
+          },
+          "participantCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 30
+          },
+          "recruitmentOpensAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "scheduled",
+              "recruiting",
+              "active",
+              "ended",
+              "cancelled"
+            ]
+          },
+          "finalSubmissionAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "canJoin": {
+            "type": "boolean"
+          },
+          "cancellationReason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "habitId",
+          "generation",
+          "policyVersion",
+          "startsAt",
+          "startDate",
+          "durationDays",
+          "capacity",
+          "minParticipants",
+          "participantCount",
+          "recruitmentOpensAt",
+          "status",
+          "finalSubmissionAt",
+          "canJoin",
+          "cancellationReason"
+        ]
+      },
+      "Available": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "targetDay": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 66
+          },
+          "targetDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "late": {
+            "type": "boolean"
+          },
+          "closesAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "ok",
+          "targetDay",
+          "targetDate",
+          "late",
+          "closesAt"
+        ]
+      },
+      "Unavailable": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "enum": [
+              false
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "BEFORE_START",
+              "ALREADY_FILLED",
+              "ENDED",
+              "CANCELLED",
+              "LEFT"
+            ]
+          }
+        },
+        "required": [
+          "ok",
+          "reason"
+        ]
+      },
+      "Availability": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/Available"
+          },
+          {
+            "$ref": "#/components/schemas/Unavailable"
+          }
+        ]
+      },
+      "Progress": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "checkins": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 66
+          },
+          "filled": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 66
+          },
+          "lates": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 66
+          },
+          "simples": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 66
+          },
+          "privates": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 66
+          },
+          "streak": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 66
+          },
+          "bestStreak": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 66
+          },
+          "emptyCells": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 66
+          },
+          "passes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "passesLeft": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "percent": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "checkins",
+          "filled",
+          "lates",
+          "simples",
+          "privates",
+          "streak",
+          "bestStreak",
+          "emptyCells",
+          "passes",
+          "passesLeft",
+          "percent"
+        ]
+      },
+      "Participation": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "day": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 66
+          },
+          "done": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 30
+          },
+          "late": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 30
+          },
+          "dormant": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 30
+          },
+          "pending": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 30
+          },
+          "participantCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 30
+          }
+        },
+        "required": [
+          "day",
+          "done",
+          "late",
+          "dormant",
+          "pending",
+          "participantCount"
+        ]
+      },
+      "Action": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "CHECKIN",
+              "LATE_CHECKIN",
+              "VIEW_RECORD",
+              "WAIT",
+              "BROWSE_COHORTS"
+            ]
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "type",
+          "label"
+        ]
+      },
+      "Home": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "serverNow": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "membership": {
+            "$ref": "#/components/schemas/Membership"
+          },
+          "cohort": {
+            "$ref": "#/components/schemas/Cohort"
+          },
+          "habit": {
+            "$ref": "#/components/schemas/Habit"
+          },
+          "policyVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "cohortDay": {
+            "type": "integer",
+            "description": "실제 업무 일차. 시작 전 0 이하, 종료 후 67 이상 가능"
+          },
+          "displayDay": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 66
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "day0",
+              "ongoing",
+              "done",
+              "broken",
+              "dormant",
+              "ended"
+            ]
+          },
+          "todayStatus": {
+            "type": "string",
+            "enum": [
+              "empty",
+              "checkin",
+              "pass",
+              "unavailable"
+            ]
+          },
+          "availability": {
+            "$ref": "#/components/schemas/Availability"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/Progress"
+          },
+          "participation": {
+            "$ref": "#/components/schemas/Participation"
+          },
+          "action": {
+            "$ref": "#/components/schemas/Action"
+          }
+        },
+        "required": [
+          "serverNow",
+          "membership",
+          "cohort",
+          "habit",
+          "policyVersion",
+          "cohortDay",
+          "displayDay",
+          "state",
+          "todayStatus",
+          "availability",
+          "progress",
+          "participation",
+          "action"
+        ]
+      },
+      "Checkin": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "membershipId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "checkin"
+            ]
+          },
+          "cohortDay": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 66
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40,
+            "x-utf16-max-length": 40
+          },
+          "samplePhotoRef": {
+            "type": "string",
+            "nullable": true
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "cohort",
+              "private"
+            ]
+          },
+          "late": {
+            "type": "boolean"
+          },
+          "simple": {
+            "type": "boolean"
+          },
+          "returning": {
+            "type": "boolean"
+          },
+          "hidden": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "membershipId",
+          "kind",
+          "cohortDay",
+          "createdAt",
+          "text",
+          "samplePhotoRef",
+          "visibility",
+          "late",
+          "simple",
+          "returning",
+          "hidden"
+        ]
+      },
+      "Pass": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "membershipId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "pass"
+            ]
+          },
+          "cohortDay": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 66
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "membershipId",
+          "kind",
+          "cohortDay",
+          "createdAt"
+        ]
+      },
+      "Entry": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/Checkin"
+          },
+          {
+            "$ref": "#/components/schemas/Pass"
+          }
+        ]
+      },
+      "WriteResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "entry": {
+            "$ref": "#/components/schemas/Entry"
+          },
+          "home": {
+            "$ref": "#/components/schemas/Home"
+          },
+          "invalidate": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "home",
+                "record",
+                "feed",
+                "members",
+                "outcome"
+              ]
+            }
+          }
+        },
+        "required": [
+          "entry",
+          "home",
+          "invalidate"
+        ]
+      },
+      "DayCell": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "day": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 66
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "done",
+              "late",
+              "pass",
+              "miss",
+              "today",
+              "future"
+            ]
+          },
+          "entryId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        },
+        "required": [
+          "day",
+          "date",
+          "status",
+          "entryId"
+        ]
+      },
+      "Record": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "serverNow": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "membershipId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DayCell"
+            },
+            "minItems": 66,
+            "maxItems": 66
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Entry"
+            },
+            "maxItems": 66
+          },
+          "progress": {
+            "$ref": "#/components/schemas/Progress"
+          }
+        },
+        "required": [
+          "serverNow",
+          "membershipId",
+          "days",
+          "entries",
+          "progress"
+        ]
+      },
+      "FeedItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "checkin": {
+            "$ref": "#/components/schemas/Checkin"
+          },
+          "author": {
+            "$ref": "#/components/schemas/Profile"
+          }
+        },
+        "required": [
+          "checkin",
+          "author"
+        ]
+      },
+      "MemberRow": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "membershipId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "checkins": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 66
+          },
+          "streak": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 66
+          },
+          "rank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 30
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "day0",
+              "ongoing",
+              "done",
+              "broken",
+              "dormant",
+              "ended"
+            ]
+          },
+          "todayStatus": {
+            "type": "string",
+            "enum": [
+              "empty",
+              "checkin",
+              "pass",
+              "unavailable"
+            ]
+          }
+        },
+        "required": [
+          "membershipId",
+          "displayName",
+          "checkins",
+          "streak",
+          "rank",
+          "state",
+          "todayStatus"
+        ]
+      },
+      "Outcome": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "serverNow": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "isFinal": {
+            "type": "boolean"
+          },
+          "finalSubmissionAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "stayedToEnd": {
+            "type": "boolean"
+          },
+          "filled66": {
+            "type": "boolean"
+          },
+          "perfect66": {
+            "type": "boolean"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/Progress"
+          },
+          "cohort": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "participantCount": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 30
+              },
+              "filled66Count": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 30
+              },
+              "perfect66Count": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 30
+              }
+            },
+            "required": [
+              "participantCount",
+              "filled66Count",
+              "perfect66Count"
+            ]
+          }
+        },
+        "required": [
+          "serverNow",
+          "isFinal",
+          "finalSubmissionAt",
+          "stayedToEnd",
+          "filled66",
+          "perfect66",
+          "progress",
+          "cohort"
+        ]
+      },
+      "Report": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "resolved",
+              "dismissed"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "resolvedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "createdAt",
+          "resolvedAt"
+        ]
+      },
+      "Support": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "resolved"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "resolvedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "createdAt",
+          "resolvedAt"
+        ]
+      },
+      "DeletionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "running",
+              "failed",
+              "completed"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "createdAt"
+        ]
+      },
+      "Intent": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "email",
+              "kakao"
+            ]
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "nextAction": {
+            "type": "string",
+            "enum": [
+              "ENTER_CODE",
+              "REDIRECT"
+            ]
+          },
+          "challengeId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "authorizationUrl": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "provider",
+          "expiresAt",
+          "nextAction",
+          "challengeId",
+          "authorizationUrl"
+        ]
+      },
+      "CodeAccepted": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "challengeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "challengeId",
+          "expiresAt",
+          "message"
+        ]
+      },
+      "AuthContext": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "csrfToken": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "csrfToken"
+        ]
+      },
+      "VerifyResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "login",
+              "reauth",
+              "link"
+            ]
+          },
+          "nextAction": {
+            "type": "string",
+            "enum": [
+              "SIGNED_IN",
+              "REAUTHENTICATED",
+              "COMPLETE_LINK"
+            ]
+          },
+          "intentId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        },
+        "required": [
+          "purpose",
+          "nextAction",
+          "intentId"
+        ]
+      },
+      "ErrorDetails": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "availability": {
+            "$ref": "#/components/schemas/Availability"
+          },
+          "field": {
+            "type": "string"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "INVALID_REQUEST",
+                  "INVALID_TEXT",
+                  "INVALID_MEDIA",
+                  "INVALID_CHALLENGE",
+                  "INVALID_OAUTH_STATE",
+                  "UNAUTHENTICATED",
+                  "FORBIDDEN",
+                  "REAUTH_REQUIRED",
+                  "NOT_FOUND",
+                  "COHORT_FULL",
+                  "JOIN_CLOSED",
+                  "ACTIVE_MEMBERSHIP_EXISTS",
+                  "ALREADY_FILLED",
+                  "PASS_EXHAUSTED",
+                  "BEFORE_START",
+                  "ENDED",
+                  "TARGET_CHANGED",
+                  "IDEMPOTENCY_CONFLICT",
+                  "IDENTITY_ALREADY_LINKED",
+                  "ACCOUNT_NOT_LINKED",
+                  "LAST_IDENTITY",
+                  "INVALID_STATE",
+                  "RATE_LIMITED",
+                  "TEMPORARILY_UNAVAILABLE",
+                  "COHORT_EXISTS"
+                ]
+              },
+              "message": {
+                "type": "string",
+                "minLength": 1
+              },
+              "requestId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "details": {
+                "$ref": "#/components/schemas/ErrorDetails"
+              }
+            },
+            "required": [
+              "code",
+              "message",
+              "requestId"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "CohortPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Cohort"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "FeedPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FeedItem"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "AdminReport": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "report": {
+            "$ref": "#/components/schemas/Report"
+          },
+          "reporterId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "checkinId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "reportedUserId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "report",
+          "reporterId",
+          "checkinId",
+          "reportedUserId",
+          "reason"
+        ]
+      },
+      "AdminSupport": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "request": {
+            "$ref": "#/components/schemas/Support"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "contactEmail": {
+            "type": "string",
+            "format": "email",
+            "nullable": true
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "request",
+          "userId",
+          "contactEmail",
+          "body"
+        ]
+      },
+      "AdminReportPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminReport"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "AdminSupportPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminSupport"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "DeletionPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeletionRequest"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "Notification": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type",
+          "membershipId",
+          "generation",
+          "habitName",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "cohort.started",
+              "cohort.cancelled"
+            ]
+          },
+          "membershipId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "generation": {
+            "type": "string"
+          },
+          "habitName": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  }
+}

@@ -517,3 +517,21 @@ button.link { border: 0; background: transparent; padding: 0; }
 .blocked { align-items: flex-start; }
 .blocked .btn { margin-top: var(--space-4); }
 .onboarding__back { display: flex; margin: 0 auto; }
+.account-screen { padding-bottom: var(--space-24); display: flex; flex-direction: column; gap: var(--space-block); }
+.account-intro, .account-stack { display: flex; flex-direction: column; gap: var(--space-inner); }
+.account-title { font-size: var(--font-size-page-title); font-weight: var(--font-weight-semibold); }
+.account-description { color: var(--color-text-secondary); }
+.account-input { width: 100%; min-width: 0; min-height: 48px; padding: var(--space-inner) var(--space-surface-sm); border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); background: var(--color-bg-surface); color: var(--color-text-primary); font: inherit; }
+.account-input--code { font-variant-numeric: tabular-nums; }
+.account-address { overflow-wrap: anywhere; word-break: break-all; }
+.account-actions { display: flex; flex-wrap: wrap; gap: var(--space-inner); }
+.account-actions > .btn { flex: 1; }
+.account-message { padding: var(--space-surface-sm); border-radius: var(--radius-md); background: var(--color-accent-soft); color: var(--color-accent); }
+.account-message--error { background: var(--color-brand-soft); color: var(--color-danger); }
+.account-danger { color: var(--color-danger); }
+.account-divider { text-align: center; color: var(--color-text-muted); font-size: var(--font-size-label); }
+.account-demo-link { display: flex; align-items: center; justify-content: center; min-height: 48px; text-decoration: underline; text-underline-offset: var(--space-2); font-size: var(--font-size-label); }
+
+.activity-screen .section__title, .activity-body { overflow-wrap: anywhere; }
+.activity-screen textarea { resize: vertical; }
+.activity-screen select { min-height: 48px; }

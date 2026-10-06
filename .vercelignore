@@ -1,0 +1,26 @@
+# CLI deployments from this repository target the V2 project only.
+backend/
+qa/
+sixtysix/
+v2/
+brand/
+.github/
+.playwright-mcp/
+*.md
+
+# Runtime credentials come from Vercel environment settings, never source uploads.
+**/.env*
+**/.vercel/**
+**/.git/**
+**/node_modules/**
+**/.agents/**
+**/dist/**
+**/coverage/**
+**/.DS_Store
+.env*
+.vercel/
+sixtysix-v2/.env*
+sixtysix-v2/.vercel/
+sixtysix-v2/node_modules/
+sixtysix-v2/.agents/
+sixtysix-v2/dist/

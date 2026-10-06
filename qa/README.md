@@ -5,7 +5,28 @@
 
 현재 등록 테스트는 210개입니다(2026-09-30 `npm test -- --list` 확인). V1 전용이며 V2를 검사하지 않습니다.
 
-## 실행
+## V2 모바일 검수
+
+별도 터미널에서 `npm --prefix sixtysix-v2 run dev`로 V2 개발 서버를 실행한 뒤, 프로젝트 루트에서 실행합니다. QA 의존성과 Chromium이 처음이라면 아래 V1 실행 절차의 설치 명령을 먼저 사용하세요.
+
+```bash
+npm --prefix qa run test:v2                # 아래 3개 순차 실행, 실패 시 중단
+npm --prefix qa run test:v2:activity       # 활동·인증·면제권·기록
+npm --prefix qa run test:v2:notifications  # 알림·만료 시 기존 알림 제거
+npm --prefix qa run test:v2:admin          # 모집 개설·취소·권한·재시도
+```
+
+| 검사 | 상태/흐름 수 | 산출물 |
+|---|---:|---|
+| 활동 | 42 | `test-results/activity-mobile/` |
+| 알림 | 12 | `test-results/notifications-mobile/` |
+| 운영자 | 15 | `test-results/admin-mobile/` |
+
+360/390/430px에서 총 69개 상태·흐름을 검사합니다. 기본 서버 주소는 `http://127.0.0.1:5173`입니다. 다른 로컬 포트를 쓰면 각각 `ACTIVITY_BASE_URL`, `NOTIFICATIONS_QA_BASE`, `ADMIN_QA_BASE` 환경변수로 지정합니다. 원격 주소는 스크립트에서 거부합니다.
+
+모든 API는 테스트 응답으로 대체합니다. 실제 공급자 로그인·DB·모집 변경을 검사하지 않으며, V2 전체 화면 E2E도 아닙니다. 로그인·모집 UI는 V2 Vitest 흐름 검사에 포함됩니다. 이번 실행 결과는 [PROGRESS.md](../PROGRESS.md)를 확인하세요.
+
+## V1 실행
 
 ```bash
 cd qa

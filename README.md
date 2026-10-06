@@ -4,7 +4,7 @@
 
 **[▶ 라이브 데모 (V1) — sixtysix-taupe.vercel.app](https://sixtysix-taupe.vercel.app)**
 
-**[▶ V2 미리보기 — sixtysix-v2.vercel.app](https://sixtysix-v2.vercel.app)** · 11화면 중 6화면 구현
+**[▶ V2 미리보기 — sixtysix-v2.vercel.app](https://sixtysix-v2.vercel.app)** · 배포 버전과 현재 로컬 구현은 다를 수 있음
 
 > 모바일 화면 기준으로 만들었습니다. 데스크톱에서는 브라우저 개발자도구의 기기 모드(430×932)로 보시면 의도한 화면이 나옵니다.
 
@@ -12,29 +12,32 @@
 
 V1은 HTML · CSS · JavaScript로 구현한 12개 화면의 동결된 비교 기준입니다. 현재 개발 대상은 **React · TypeScript 기반 V2**입니다.
 
-## 현재 프로젝트 구성 (2026-10-05 확인)
+## 프로젝트 구성
 
-현재 진행 상태와 다음 작업은 [`PROGRESS.md`](PROGRESS.md), 작업 원칙과 인계 사항은 [`HANDOFF.md`](HANDOFF.md)를 확인하세요.
+현재 개발 대상은 V2입니다. 진행 상태·검증 결과·다음 작업은 [PROGRESS.md](PROGRESS.md), 작업 원칙은 [HANDOFF.md](HANDOFF.md)에 모았습니다.
 
-| 경로 | 역할 | 상태 |
-|---|---|---|
-| `sixtysix/` | V1 정적 모바일 웹 | 동결된 비교 기준, 기존 문서상 배포 루트 |
-| `sixtysix-v2/` | React 19 · TypeScript · Vite 앱 | 현재 개발 대상, 6개 화면 |
-| `qa/` | V1 Playwright 회귀 테스트 | 210개 등록, 이번에는 목록만 확인 |
-| `v2/` | 진단·범위·도메인·와이어프레임 문서 | `V2-SCOPE.md`가 범위 결정 기준 |
-| `brand/` | 로고·파비콘 원본과 사용 규정 | V2의 `public/brand/`에 적용 에셋 존재 |
+| 경로 | 역할 |
+|---|---|
+| `sixtysix/` | V1 정적 모바일 웹. 동결된 비교 기준 |
+| `sixtysix-v2/` | React·TypeScript 앱, Fastify 서버, Vercel API 진입점 |
+| `backend/` | PostgreSQL migration, OpenAPI 계약, DB·worker 도구 |
+| `qa/` | V1 Playwright 회귀 테스트, V2 모바일 검수 |
+| `v2/` | 범위 결정·설계·기능별 구현 기록 |
+| `brand/` | 로고·파비콘 원본과 사용 규정 |
 
-V2는 계획된 11개 화면 중 홈·코호트·기록·인증 작성·마이·온보딩 6개를 제공합니다. 졸업·탐색·인증 상세·챌린지 상세·공지는 아직 구현되지 않았습니다. 로그인·서버 DB·실제 코호트 매칭은 없는 로컬 데모입니다.
+V2는 localStorage 기반 데모 6화면과 실제 계정용 로그인·계정·모집·활동·알림·운영자 화면을 제공합니다. 실제 계정은 API와 PostgreSQL을 사용하며 데모 기록과 분리됩니다. 공급자 실계정 검수와 남은 화면은 후속 작업입니다.
 
 ```bash
 cd sixtysix-v2
-npm ci             # 최초 설치
+npm ci             # 최초 설치, Node.js 22
 npm run dev        # http://localhost:5173
 npm test
-npm run build      # 타입 검사 포함
+npm run build      # 프런트·서버 타입 검사 포함
 ```
 
-2026-10-05 재검증에서 V2 테스트 **169개(13개 파일)**와 타입 검사·프로덕션 빌드가 통과했습니다. 9/30 점검에서 찾은 정합성 문제 6건은 수정했고 내역은 [`HANDOFF.md`](HANDOFF.md)에 있습니다. 실제 배포 상태와 브라우저 시각 검수는 이번 점검에 포함하지 않았습니다.
+실제 계정 기능은 별도 터미널에서 `npm run dev:api`로 API를 실행해야 합니다. 환경변수 설정과 구조는 [V2 README](sixtysix-v2/README.md), 모바일 검수는 [QA README](qa/README.md)를 확인하세요.
+
+[인증 검수 Preview](https://sixtysix-v2-auth-preview.vercel.app)는 기존 V2 미리보기와 별도입니다. 배포·worker의 마지막 원격 확인 내용은 [진행 기록 26~28장](PROGRESS.md#26-preview-worker-자동-실행-활성화-2026-10-06)을 따릅니다.
 
 **아래 화면·디자인·배포 설명은 V1 기준입니다.** V2 상세는 [`sixtysix-v2/README.md`](sixtysix-v2/README.md)를 보세요.
 
@@ -55,7 +58,7 @@ npm run build      # 타입 검사 포함
 
 ---
 
-## 화면 12개
+## V1 화면 12개
 
 | | 화면 | 역할 |
 |---|---|---|
@@ -108,11 +111,11 @@ npm run build      # 타입 검사 포함
 
 ---
 
-## 배포
+## V1 배포
 
 `main` 브랜치에 푸시하면 Vercel이 자동으로 배포합니다. 배포 루트는 `sixtysix/` 입니다.
 
-## 실행
+## V1 실행
 
 ```bash
 cd sixtysix
@@ -122,7 +125,7 @@ python3 -m http.server 8900
 
 `file://` 로 열면 이미지 경로와 `localStorage` 가 동작하지 않습니다.
 
-## 테스트
+## V1 테스트
 
 Playwright 회귀 테스트를 **360 · 390 · 430px** 세 폭에서 실행합니다.
 
@@ -132,13 +135,13 @@ npm install && npx playwright install chromium
 npm test
 ```
 
-현재 등록 테스트는 210개입니다. 이번 점검에서는 목록만 확인했으며 전체 브라우저 회귀 테스트는 재실행하지 않았습니다.
+현재 등록 테스트는 210개입니다. 2026-09-30 목록 확인 기준이며, 이번 정리에서는 V1 브라우저 회귀를 재실행하지 않았습니다.
 
 핵심 흐름 9개(온보딩, 인증, 면제권, 복귀, 탐색, 응원·저장, 상태 전환, 졸업, 손상된 저장소 복구)와 12화면 구조·접근성, 스크린샷 회귀를 검사합니다. 자세한 항목은 [`qa/README.md`](qa/README.md).
 
 ---
 
-## 구조
+## V1 구조
 
 ```text
 sixtysix/                 배포 대상 (정적)
@@ -163,4 +166,4 @@ qa/                       회귀 테스트 (배포에 포함되지 않음)
 
 ---
 
-모든 인원 · 인증 · 순위 · 공지는 샘플 데이터입니다. 로그인, 사진 업로드, 알림, 실제 코호트 매칭은 구현 범위에 없습니다.
+V1의 모든 인원 · 인증 · 순위 · 공지는 샘플 데이터입니다. 로그인, 사진 업로드, 알림, 실제 코호트 매칭은 구현 범위에 없습니다.
