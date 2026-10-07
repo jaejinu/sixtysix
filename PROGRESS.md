@@ -1,7 +1,7 @@
 # 진행 현황 — 육십육 (SIXTYSIX)
 
 > 무엇을 했고, 무엇을 하는 중이고, 무엇이 남았는가를 한 문서에 모은다.
-> 최종 갱신: 2026-10-07 · 카카오 로그인 및 Preview 실계정 업무 흐름 검수 (32~33장)
+> 최종 갱신: 2026-10-07 · Preview 실계정 업무 검수·브랜드 자산 배포 수정 (32~34장)
 >
 > 결정의 근거는 [`v2/V2-SCOPE.md`](v2/V2-SCOPE.md), 작업 방법과 함정은 [`HANDOFF.md`](HANDOFF.md) 에 있다.
 > 이 문서는 **상태**만 다룬다. 충돌하면 V2-SCOPE 를 따른다.
@@ -703,3 +703,13 @@ Git HEAD는 `d9a89fd`이며 이번 인증 설정/검증 도구/문서와 앱 변
 - 날짜 변경은 이 검수 모집에 한정했고 `qa.fixture.start_shifted`, `qa.fixture.day_shifted` 감사 이벤트를 기록했다. 기존 인증의 생성 시각은 보존했기 때문에 날짜 이동 후 1일차가 ‘늦은 인증’으로 표시된다. 이는 합성 검수의 결과이며 실제 자정/오전 4시 경계나 지각 접수 제한을 통과한 증거가 아니다.
 - 실제 예약 실행은 [10월 7일 09:12 KST](https://github.com/jaejinu/sixtysix/actions/runs/37550709160), [15:04 KST](https://github.com/jaejinu/sixtysix/actions/runs/37579585924) 성공을 추가 확인했다. cron 선언은 5분 간격이지만 최근 실행 간격은 수 시간이다. 위 업무 검수의 시작/알림은 로컬 worker 수동 실행 결과이며 예약 정시성 검증과 구분한다.
 - 다음 우선순위는 예약 실행 지연 조사와 운영용 실행 경로 확정이다. 그다음 별도 Production DB·인증·카카오 콜백을 구성한다.
+
+## 34. 검수 중 발견한 로고 배포 누락 수정 (2026-10-07)
+
+- 완료 화면 캡처에서 헤더 로고가 깨지는 것을 발견했다. 실제 Preview `/brand/logo-mark.svg`는 SVG 대신 SPA HTML을 반환했다.
+- 공통 `.vercelignore`의 `brand/`가 V2 `public/brand/`까지 제외했다. `/brand/`로 루트 디자인 원본 폴더만 제외하도록 범위를 한정했다.
+- 업로드 검사에 로고·작은 로고·favicon·apple-touch-icon 4개 필수 경로를 추가했다. 원격 검사에는 SVG 3개의 Content-Type·SVG 본문·HTML fallback 아님을 추가했다.
+- 정상 업로드 150개 파일 통과, 로고를 제거한 업로드 목록은 기대대로 거부. JS 구문 검사·diff 검사 통과.
+- 수정 `5516e00` main push 완료. Preview `dpl_9rR7xGr7RBBYTSaFBgX2Q1buE3Fp` READY, 고정 인증 alias 연결 완료. 원격 프런트/서버 타입 검사·빌드 성공.
+- 확장한 `--kakao-ready` 원격 API·DB·인증/Origin 방어·자산·SPA 검사 모두 통과. Chrome 새로고침 후 로고 이미지 로딩 완료(`naturalWidth > 0`)와 기존 인증/면제권 집계 유지 확인.
+- 기존 V1 주소는 HTTP 200이며 응답 HTML이 로컬 동결 원본과 일치한다. 브랜드 원본 이외 비밀 파일·두 앱 배포 범위는 기존 업로드 검사로 확인했다.
