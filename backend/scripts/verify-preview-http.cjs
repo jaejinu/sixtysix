@@ -94,6 +94,12 @@ try {
     const response = get(path); assert.equal(response.status, 200); assert.ok(response.body.length > 100);
     assert.doesNotMatch(response.body, /<html/i); console.log(`PASS asset ${path}`);
   }
+  for (const path of ['/brand/logo-mark.svg', '/brand/logo-mark-small.svg', '/brand/favicon.svg']) {
+    const response = get(path); assert.equal(response.status, 200);
+    assert.match(response.headers, /content-type:.*image\/svg\+xml/);
+    assert.match(response.body, /<svg\b/); assert.doesNotMatch(response.body, /<html/i);
+    console.log(`PASS brand ${path}`);
+  }
   for (const path of ['/login', '/account', '/recruitment', '/notifications', '/admin/cohorts']) {
     const response = get(path); assert.equal(response.status, 200); assert.equal(response.body, home.body);
     console.log(`PASS SPA ${path}`);

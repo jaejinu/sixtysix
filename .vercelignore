@@ -2,7 +2,7 @@
 backend/
 qa/
 v2/
-brand/
+/brand/
 .github/
 .playwright-mcp/
 *.md

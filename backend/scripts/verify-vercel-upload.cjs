@@ -13,7 +13,8 @@ for (const file of files) {
   'Private or generated file in upload');
 }
 const names = new Set(files.map(file => file.path));
-for (const required of ['api/backend.ts', 'server/app.ts', 'src/ui/App.tsx', 'package.json', 'package-lock.json', 'vercel.json']) {
+for (const required of ['api/backend.ts', 'server/app.ts', 'src/ui/App.tsx', 'package.json', 'package-lock.json', 'vercel.json',
+  'public/brand/logo-mark.svg', 'public/brand/logo-mark-small.svg', 'public/brand/favicon.svg', 'public/brand/apple-touch-icon.png']) {
   assert.ok(names.has(`sixtysix-v2/${required}`), `Missing required app file: ${required}`);
 }
 assert.ok(names.has('sixtysix/index.html'), 'Missing V1 entry point: shared ignore rules must preserve both apps');
