@@ -1,7 +1,6 @@
-# CLI deployments from this repository target the V2 project only.
+# Shared by both Vercel projects. Keep both application roots available.
 backend/
 qa/
-sixtysix/
 v2/
 brand/
 .github/
