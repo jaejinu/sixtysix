@@ -6,7 +6,7 @@ const env = { APP_ORIGIN:'https://app.example.test',AUTH_CONTEXT_SECRET:'test-on
   KAKAO_CLIENT_ID:'test-client-id',KAKAO_CLIENT_SECRET:'test-client-secret' };
 
 describe('Kakao confidential-client adapter', () => {
-  it('uses exact callback, no email scope, prompt=login and state-bound PKCE', async () => {
+  it('uses exact callback, no extra profile scopes, prompt=login and state-bound PKCE', async () => {
     const transport = vi.fn<typeof fetch>()
       .mockResolvedValueOnce(new Response('{"access_token":"test-access","token_type":"bearer"}'))
       .mockResolvedValueOnce(new Response('{"id":1376016924429759243,"kakao_account":{"email":"ignored@example.test"}}'));
@@ -14,7 +14,7 @@ describe('Kakao confidential-client adapter', () => {
     const url = new URL(provider.authorize('random-state',true));
     expect(url.origin).toBe('https://kauth.kakao.com');
     expect(url.searchParams.get('redirect_uri')).toBe('https://app.example.test/v1/auth/kakao/callback');
-    expect(url.searchParams.get('scope')).toBe('profile_nickname');
+    expect(url.searchParams.has('scope')).toBe(false);
     expect(url.searchParams.get('prompt')).toBe('login');
     expect(url.toString()).not.toContain('test-client-secret');
     expect(await provider.exchange('test-code','random-state')).toBe('1376016924429759243');

@@ -1,9 +1,10 @@
-// Read-only remote smoke check. Vercel CLI handles deployment protection.
-// Providers remain absent; --context-ready verifies configured browser context.
+// Remote smoke check. Vercel CLI handles deployment protection.
+// --kakao-ready creates one short-lived OAuth state, but does not exchange a code or create a user.
 const { execFileSync } = require('node:child_process');
 const assert = require('node:assert/strict');
 const base = new URL(process.argv[2]);
-const contextReady = process.argv[3] === '--context-ready';
+const kakaoReady = process.argv[3] === '--kakao-ready';
+const contextReady = kakaoReady || process.argv[3] === '--context-ready';
 assert.ok(process.argv.length <= 4 && (!process.argv[3] || contextReady), 'Invalid options');
 assert.ok(base.protocol === 'https:' && base.hostname.startsWith('sixtysix-v2-') && base.hostname.endsWith('.vercel.app'));
 assert.equal(base.pathname, '/');
@@ -29,7 +30,7 @@ try {
     ['/v1/cohorts?limit=0', 400],
     ['/v1/not-a-route', 404],
     ['/v1/auth/context', contextReady ? 200 : 503, ...(contextReady ? [data => assert.match(data.csrfToken, /^[A-Za-z0-9_-]{43}$/)] : [])],
-    ['/v1/auth/kakao/start', 503],
+    ...(!kakaoReady ? [['/v1/auth/kakao/start', 503]] : []),
     ['/v1/me', contextReady ? 401 : 503],
     ['/v1/me/notifications', contextReady ? 401 : 503],
     ['/v1/admin/cohorts', contextReady ? 401 : 503],
@@ -53,6 +54,22 @@ try {
       assert.deepEqual(Object.keys(data.error).sort(), ['code', 'message', 'requestId']);
     }
     console.log(`PASS ${status} ${path}`);
+  }
+  if (kakaoReady) {
+    const response = get('/v1/auth/kakao/start');
+    assert.equal(response.status, 302);
+    const location = response.rawHeaders.match(/(?:^|\r\n)location: ([^\r\n]+)/i)?.[1];
+    assert.ok(location);
+    const target = new URL(location);
+    assert.equal(target.origin, 'https://kauth.kakao.com');
+    assert.equal(target.pathname, '/oauth/authorize');
+    assert.equal(target.searchParams.get('redirect_uri'), `${base.origin}/v1/auth/kakao/callback`);
+    assert.equal(target.searchParams.get('response_type'), 'code');
+    assert.equal(target.searchParams.get('code_challenge_method'), 'S256');
+    assert.ok(target.searchParams.get('state'));
+    assert.ok(target.searchParams.get('client_id'));
+    assert.ok(!target.searchParams.has('client_secret') && !target.searchParams.has('scope'));
+    console.log('PASS 302 Kakao authorization redirect, exact callback and minimal scope');
   }
   if (contextReady) {
     const token = JSON.parse(browserContext.body).csrfToken;

@@ -18,7 +18,7 @@
 | V2 실제 계정 | 로그인·계정·모집·본인 활동·알림·운영자 화면과 API 구현 |
 | DB | migration 001~009, 앱·소유자·worker 권한 분리 |
 | Preview | `70a7000` 소스로 재배포·고정 검수 주소 연결 완료. 공급자 키는 미등록 (28~29장) |
-| worker | 5분 예약 활성화·수동 실행 성공 기록. 실제 schedule 이벤트는 마지막 조회에서 미관측 (26~28장) |
+| worker | 예약 활성화 유지. 실제 schedule 이벤트 2건 성공 확인 (30장). 정확한 5분 간격 실행을 확인한 것은 아님 |
 | 다음 | 카카오 설정·실계정 흐름 검수. 이메일은 발송 도메인 미보유로 보류 |
 
 ### 이번 로컬 점검
@@ -646,3 +646,28 @@ Git HEAD는 `d9a89fd`이며 이번 인증 설정/검증 도구/문서와 앱 변
 - 원격 빌드의 의존성 audit 보고는 7건(중간 3·높음 2·심각 2)으로 이전 5건 기록과 다르다. 이 보고는 개발 의존성 포함이며, 이번 배포에서 버전 변경은 하지 않았다. 원인·실행 의존성 영향 확인은 후속이다.
 
 - 고정 Preview 원격 HTTP **22개 검사 통과**: DB·공개 API·인증 context·비로그인 차단·Origin 방어·자산·SPA. 공급자 실계정 로그인은 미검증이다.
+
+## 30. 카카오 설정 착수·운영 점검 (2026-10-06)
+
+- Vercel Preview의 카카오 키 2개는 아직 미등록이다. Chrome에 카카오 개발자 콘솔을 열었으나 계정 로그인 화면이므로 사용자 직접 로그인 대기 상태다. 비밀번호·인증번호는 채팅으로 받지 않는다.
+- 카카오 공식 설정 문서: https://developers.kakao.com/docs/ko/kakaologin/prerequisite . REST API 키·활성 client secret, 로그인 활성화, `profile_nickname` 동의항목 및 28장의 redirect URI를 확인한다.
+- worker 변수 `WORKER_SCHEDULE_ENABLED=true`. 실제 schedule 이벤트 [2026-10-06 07:09 KST](https://github.com/jaejinu/sixtysix/actions/runs/37380589888), [11:17 KST](https://github.com/jaejinu/sixtysix/actions/runs/37403430637) 모두 성공했다. 수동 실행만 확인했던 상태에서 갱신한다. 관측된 실행 간격은 5분과 다르므로 정시성이 필요한 운영 전 실행 지연을 따로 확인한다.
+- V2 `npm audit` 7건 재확인: 개발·테스트 의존성인 Vite·Vitest 및 관련 패키지. `npm audit --omit=dev`는 0건이다. Vite/Vitest의 주요 버전 변경이 포함된 수정 제안이 있어 자동 강제 업데이트는 하지 않았다. 개발 도구 취약점 해소와 호환성 검증은 후속이다.
+- 공급자 설정·실계정 로그인·운영자 지정·새 모집·Production 환경은 이번 점검에서 변경하지 않았다.
+
+## 31. V1 기존 주소 404 복구 (2026-10-07)
+
+- 사용자 신고 주소 `https://sixtysix-taupe.vercel.app/`에서 404를 재현했다. Vercel 상태 READY와 실제 사이트 정상 응답은 별개였다.
+- 원인: 저장소 공통 `.vercelignore`의 `sixtysix/` 제외 규칙이 Git 연동 V1 배포 소스까지 제거했다. 두 앱 루트를 모두 보존하도록 수정했다. V1 앱 코드는 변경하지 않았다.
+- `backend/scripts/verify-vercel-upload.cjs`는 두 앱의 업로드를 허용하고 V1 `index.html` 누락도 차단한다. 정상 목록 146개 파일 통과 및 V1 진입점 제거 시 거부 검증.
+- 수정 커밋 `2ef770a` main push 완료. V1·V2 Git 연동 배포 모두 성공. V1 Production 직접 배포 `dpl_4ASDYuYjChLJPYNP85i8kwamhNZg`도 완료하고 기존 주소에 연결했다.
+- 공개 주소의 HTML·CSS·JS·이미지 18개 HTTP 200 및 로컬 원본 바이트 일치 확인. 원격 Chromium 360/390/430px에서 온보딩 → 인증 작성 → 홈 확인 모두 통과, 페이지 오류 0개. 인증 검수는 격리 브라우저 localStorage 데모만 사용했다.
+- 다음 배포에서는 READY 확인과 함께 실제 공개 주소의 HTML·자산·브라우저 동작까지 검증한다.
+
+## 32. 카카오 앱·Preview 공급자 연결 (2026-10-07)
+
+- 사용자 승인 운영자명 ‘재진’, 앱 ‘육십육’ ID `1600591` 생성 확인. 카카오 로그인 ON, OpenID Connect OFF.
+- Preview 전용 REST API 키 `SIXTYSIX Preview`와 활성 Client Secret을 발급해 Vercel `sixtysix-v2`의 Preview Secret `KAKAO_CLIENT_ID`·`KAKAO_CLIENT_SECRET`에 등록했다. 실제 비밀값은 출력·문서·Git에 남기지 않았다.
+- 로그인 redirect URI는 `https://sixtysix-v2-auth-preview.vercel.app/v1/auth/kakao/callback`이다.
+- 계정 식별은 공급자 ID만 사용하므로 사용하지 않는 `profile_nickname` scope 요청을 제거했다. 닉네임·이메일 동의항목을 새로 활성화하지 않는다. 28·30장의 닉네임 설정 안내는 이 변경으로 대체한다.
+- Vitest 268개·프런트/서버 타입 검사·빌드 통과. 원격 검증 도구에 `--kakao-ready` 추가: 임시 OAuth state 1개를 만들고 카카오 인가 redirect·콜백·PKCE·최소 scope를 확인한다. 실계정 로그인 성공과 구분한다.

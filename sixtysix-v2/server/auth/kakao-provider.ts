@@ -20,7 +20,7 @@ export function kakaoProvider(env: NodeJS.ProcessEnv = process.env, transport: t
     authorize(state, reauthenticate) {
       const url = new URL('https://kauth.kakao.com/oauth/authorize');
       url.search = new URLSearchParams({ response_type: 'code', client_id: clientId, redirect_uri: redirect,
-        state, scope: 'profile_nickname', code_challenge: createHash('sha256').update(verifier(state)).digest('base64url'),
+        state, code_challenge: createHash('sha256').update(verifier(state)).digest('base64url'),
         code_challenge_method: 'S256', ...(reauthenticate ? { prompt: 'login' } : {}) }).toString();
       return url.toString();
     },

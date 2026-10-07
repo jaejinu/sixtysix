@@ -35,7 +35,7 @@
 
 서버 환경 변수는 기존 `APP_ORIGIN`, `AUTH_CONTEXT_SECRET` 외에 `KAKAO_CLIENT_ID`(REST API 키), `KAKAO_CLIENT_SECRET`이다. callback은 환경 변수 origin에서 `${APP_ORIGIN}/v1/auth/kakao/callback`으로 고정한다. 카카오 개발자 콘솔에 정확히 같은 주소를 등록해야 한다. 클라이언트가 callback 주소를 고를 수 없고 VITE_ 변수로 키를 노출하지 않는다.
 
-인가 scope는 `profile_nickname`, 이메일은 요청하거나 로그인 조건으로 삼지 않는다. OIDC ID 토큰은 로그인 근거로 사용하지 않는다. 서비스 로그아웃/수단 해제는 내부 세션·identity 처리이며 카카오 계정 자체 로그아웃/앱 연결 해제 API 호출과 다르다.
+인가 요청에 추가 scope를 지정하지 않는다. 닉네임·이메일은 요청하거나 로그인 조건으로 삼지 않으며 `/v2/user/me`의 ID만 사용한다. OIDC ID 토큰은 로그인 근거로 사용하지 않는다. 서비스 로그아웃/수단 해제는 내부 세션·identity 처리이며 카카오 계정 자체 로그아웃/앱 연결 해제 API 호출과 다르다.
 
 카카오 성공 복귀는 `/home`, `/my`, `/onboarding`만 허용한다. 연결/재인증 복귀는 `/my?auth=COMPLETE_LINK|REAUTHENTICATED&intentId=...`, 실패는 `/my?authError=공개코드`. React가 아직 이 결과를 처리하지 않으므로 화면 연결은 다음 단계다.
 
