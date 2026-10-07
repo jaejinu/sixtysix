@@ -2,7 +2,7 @@
 
 ## 재개 순서
 
-1. [PROGRESS.md](PROGRESS.md) 0장에서 현재 상태와 이번 검증 범위를 읽습니다. 공급자 설정의 재개 절차는 28장, 최신 커밋·배포 결과는 29장에 있습니다.
+1. [PROGRESS.md](PROGRESS.md) 0장에서 현재 상태와 이번 검증 범위를 읽습니다. 카카오 실계정 로그인 완료 결과와 최신 재개 지점은 32장에 있습니다. V1 주소 복구는 31장, 이메일 보류는 28장을 확인합니다.
 2. [V2-SCOPE.md](v2/V2-SCOPE.md)에서 범위와 확정 정책을 확인합니다.
 3. [V2 README](sixtysix-v2/README.md), [backend README](backend/README.md), [QA README](qa/README.md)에서 구조·실행 방법을 확인합니다.
 4. 아래 작업 원칙을 지키고, PROGRESS의 미커밋 변경 분류를 참고해 작업 범위를 정합니다.

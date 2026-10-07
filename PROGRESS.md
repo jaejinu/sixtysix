@@ -17,9 +17,9 @@
 | V2 데모 | localStorage·시뮬레이터 기반 6화면 |
 | V2 실제 계정 | 로그인·계정·모집·본인 활동·알림·운영자 화면과 API 구현 |
 | DB | migration 001~009, 앱·소유자·worker 권한 분리 |
-| Preview | `70a7000` 소스로 재배포·고정 검수 주소 연결 완료. 공급자 키는 미등록 (28~29장) |
+| Preview | 카카오 키 연결·실계정 로그인·세션 유지·로그아웃 검수 완료 (32장) |
 | worker | 예약 활성화 유지. 실제 schedule 이벤트 2건 성공 확인 (30장). 정확한 5분 간격 실행을 확인한 것은 아님 |
-| 다음 | 카카오 설정·실계정 흐름 검수. 이메일은 발송 도메인 미보유로 보류 |
+| 다음 | 운영자/모집·참여·인증·알림의 실계정 검수. 이메일은 발송 도메인 미보유로 보류 |
 
 ### 이번 로컬 점검
 
@@ -671,3 +671,11 @@ Git HEAD는 `d9a89fd`이며 이번 인증 설정/검증 도구/문서와 앱 변
 - 로그인 redirect URI는 `https://sixtysix-v2-auth-preview.vercel.app/v1/auth/kakao/callback`이다.
 - 계정 식별은 공급자 ID만 사용하므로 사용하지 않는 `profile_nickname` scope 요청을 제거했다. 닉네임·이메일 동의항목을 새로 활성화하지 않는다. 28·30장의 닉네임 설정 안내는 이 변경으로 대체한다.
 - Vitest 268개·프런트/서버 타입 검사·빌드 통과. 원격 검증 도구에 `--kakao-ready` 추가: 임시 OAuth state 1개를 만들고 카카오 인가 redirect·콜백·PKCE·최소 scope를 확인한다. 실계정 로그인 성공과 구분한다.
+
+### 공급자 연결 검증 결과
+
+- 소스 `b9f801b` 커밋·main push 완료. Preview `dpl_FrPJ8iU84jY2fQfBXeGJE5VKf3M6` (`https://sixtysix-v2-j9s62q2w7-dbwowls12345-3437s-projects.vercel.app`) READY, 고정 `https://sixtysix-v2-auth-preview.vercel.app` 연결 완료.
+- `--kakao-ready` 원격 검사 22개 통과. 카카오 인가 redirect가 503에서 302로 바뀌었고 정확한 콜백·PKCE·추가 scope 없음 확인.
+- Chrome에서 카카오 ‘회원번호 제공’ 동의 화면 → 로그인 → ‘내 계정’·카카오 로그인 수단 표시 확인. 새로고침 후 세션 유지, 로그아웃 후 로그인 화면 복귀, 카카오 재로그인 성공까지 확인. 검수 사용자의 Preview 계정이 실제 생성되었다.
+- 닉네임·이메일 추가 동의 없음, 운영자 자동 승격·모집 데이터 생성 없음. Production 카카오 키는 등록하지 않았다. 기존 V1 주소는 HTTP 200으로 재확인.
+- 다음: 검수할 운영자 계정을 명시적으로 지정한 뒤 모집·참여·인증·알림 전체 흐름을 검수한다. Production DB·인증 구성 및 이메일은 별도 후속이다.
