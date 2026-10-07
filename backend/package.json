@@ -12,10 +12,12 @@
     "test:auth-spike": "node --test auth-spike/compatibility.test.mjs",
     "outbox:work": "node --env-file-if-exists=.env scripts/process-outbox.cjs",
     "db:provision-worker": "node --env-file-if-exists=.env scripts/provision-worker.cjs",
-    "worker:tick": "node --env-file-if-exists=.env scripts/run-scheduled-work.cjs"
+    "worker:tick": "node --env-file-if-exists=.env scripts/run-scheduled-work.cjs",
+    "test:scheduled-function": "node --test functions/scheduled-handler.test.mjs"
   },
   "devDependencies": {
     "@apidevtools/swagger-parser": "13.1.0",
+    "@neon/config": "1.8.4",
     "ajv": "8.20.0",
     "ajv-formats": "3.0.1",
     "better-auth": "1.7.7"

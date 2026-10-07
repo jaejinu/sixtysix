@@ -1,5 +1,29 @@
 # 자동 시작 판단·알림 처리 스케줄
 
+## 2026-10-08: 예약 지연 조사와 Neon 대체 경로
+
+GitHub schedule 8건은 모두 성공했지만, 2026-10-05 22:09 UTC부터 10월 7일 13:14 UTC까지 실행 간격이 **203~429분**이었다. 최신 실행은 생성 6초 뒤 runner가 시작하고 14초 뒤 종료했다. 따라서 관측된 수 시간 공백은 worker 처리 시간이 아니라 예약 이벤트 생성 단계에 있다. GitHub 내부 지연의 구체 원인까지 확인한 것은 아니다. [공식 지연/누락 안내](https://docs.github.com/en/actions/how-tos/troubleshoot-workflows).
+
+기존 Preview 프로젝트 `twilight-scene-60200159`, 브랜치 `br-dawn-shadow-b3ozdovu`는 Singapore이며 Neon Functions를 사용할 수 있다. `pg_cron`도 설치 가능하지만 DB가 잠들면 실행되지 않으므로 이를 켜는 것으로 해결하지 않는다. [pg_cron 제한](https://neon.com/docs/extensions/pg_cron), [절전 상태에서도 실행되는 Function Trigger](https://neon.com/docs/compute/functions/triggers/schedule).
+
+### 준비된 구현 (아직 원격 활성화 전)
+
+- `backend/functions/scheduled-worker.mjs`: 기존 최소 권한 worker·SQL·outbox 로직을 재사용한다. 자동 주입되는 owner `DATABASE_URL`은 사용하지 않고 `WORKER_DATABASE_URL`만 허용한다. DB grant 검사·배치 20개·90초 처리 예산을 유지한다.
+- `scheduled-handler.mjs`: Neon edge가 외부 입력에서 제거하는 `X-Neon-Trigger-Invocation-Id`를 검증한다. **다른 호스팅에 그대로 배포하면 안 된다.** POST/경로/예약 envelope 검증, 겹치는 실행 재시도, 실패 시 503, 비밀값 없는 지연·처리시간 로그를 제공한다. [플랫폼의 헤더 보증](https://neon.com/docs/compute/functions/triggers/overview#confirming-a-request-came-from-neon).
+- `backend/neon.ts`: 함수·예약을 선언하며 최초 상태는 `enabled: false`다. 타 서비스·DB 설정을 선언하지 않는다. 신규 원격 함수의 일반 요청과 위조 헤더 요청이 모두 403인지 확인한 뒤 활성화한다.
+- 로컬 단위 검증 6개 통과. 실제 Preview worker 연결로 handler 호출 200, 추가 시작/전달 0·실패 0 확인. 이는 실제 예약 호출 검증과 다르다.
+- Neon Free의 DB 한도는 월 100 CU-hours, 절전은 무활동 5분 후다. 0.25 CU를 5분 간격으로 계속 깨우면 월 약 180~186 CU-hours가 될 수 있다. 무료 Preview는 15분 간격 선택을 제안했으며 사용자 답변을 기다린다. 유료 전환은 자동 진행하지 않는다. [요금제 근거](https://neon.com/docs/introduction/plans).
+
+### 배포·전환 절차
+
+1. Neon CLI를 승인받은 계정/프로필로 인증한다. 광범위한 계정 권한이 필요하므로 콘솔 로그인만으로 승인됐다고 간주하지 않는다.
+2. `backend/`에서 대상 프로젝트·브랜치를 명시해 `neon config plan --config neon.ts --env .env.preview-worker` 결과를 검토한다. 계획/에러 출력에 비밀값이 포함되지 않도록 처리한다. `--no-env-pull`로 기존 로컬 비밀 파일을 보존한다.
+3. 동일 대상에 배포하고 함수 READY 및 일반/위조 HTTP 요청 차단을 검증한다. CLI profile은 `sixtysix-preview`를 사용한다.
+4. 승인된 주기로 예약을 활성화하고 최소 연속 2회의 실제 trigger 로그에서 예약 시각·실행 시각·지연·실패 수를 확인한다.
+5. 새 예약 검수가 끝나면 GitHub `WORKER_SCHEDULE_ENABLED=false`로 중복 예약을 중지한다. 기존 수동 workflow는 복구용으로 유지한다. 전환 실패 시 기존 예약을 유지하며 완료로 보고하지 않는다.
+
+아래는 GitHub 경로를 구축한 당시 기록이다. 실제 전환 여부는 PROGRESS 최신 장을 따른다.
+
 ## 활성화 기록 — 2026-10-06
 
 - 사용자 승인으로 worker 파일을 `d9a89fd`로 main에 반영했다. 앱 UI/API 미커밋 구현은 포함하지 않았다.
