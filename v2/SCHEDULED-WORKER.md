@@ -1,12 +1,48 @@
 # 자동 시작 판단·알림 처리 스케줄
 
+## 현재 운영 경로 — Neon Function 예약 (2026-10-22 전환 완료)
+
+Preview worker는 **Neon Functions 예약 trigger**가 15분 간격으로 실행한다. GitHub Actions 예약은 `WORKER_SCHEDULE_ENABLED=false`로 중지했고, workflow 자체는 수동 복구용으로 `active` 상태를 유지한다.
+
+| 항목 | 값 |
+|---|---|
+| 프로젝트 / 브랜치 | `twilight-scene-60200159` / `br-dawn-shadow-b3ozdovu` (Singapore) |
+| 함수 | `sixtysixworker`, nodejs24, deployment completed |
+| trigger | `sixtysix-preview-tick` (`trigger-1deedb3e-…`), `2,17,32,47 * * * *` UTC, enabled |
+| CLI 프로필 | `sixtysix-preview` (브라우저 OAuth) |
+
+전환 검증 (시각은 UTC):
+
+- `neon config plan`: 함수 1개·trigger 1개 추가만 표시, 그 외 변경 없음. 배포는 `--no-env-pull`로 로컬 비밀 파일을 건드리지 않았다.
+- 배포 직후(예약 꺼짐): `GET` 405, 헤더 없는 `POST` 403, `X-Neon-Trigger-Invocation-Id` 위조 + 정상 envelope `POST` 403(대소문자 두 형태). 예약 활성화 재배포 후 위조 요청 다시 403.
+- 실제 예약 실행 연속 2회 — 실패 0, 예산 초과 없음:
+
+| scheduledAt | 지연 | 처리 | 시작 판단 | 전달 |
+|---|---|---|---|---|
+| 2026-10-21 16:17:00 | 535ms | 150ms | due 0 | 0 (failed 0) |
+| 2026-10-21 16:32:00 | 1,102ms | 934ms | due 0 | 0 (failed 0) |
+
+실행 기록 확인:
+
+```sh
+cd backend
+npx neonctl logs query --source function --since 2h --sort-order asc \
+  --profile sixtysix-preview --project-id twilight-scene-60200159 --branch br-dawn-shadow-b3ozdovu -o json
+```
+
+`neon.function.app` scope의 `{"event":"scheduled_worker",…}` 줄이 한 번의 예약 실행이다. trigger 자체(`neon triggers get`)는 다음 실행 시각만 보여주고 과거 실행 이력은 없다.
+
+설정 변경은 `backend/neon.ts`를 고친 뒤 `neon config plan` → `neon config apply --no-env-pull` 순서로 한다. 콘솔이나 `neon triggers enable/disable`로만 바꾸면 다음 apply가 파일 값으로 되돌린다.
+
+**되돌리기:** `neon.ts`의 `enabled: false`로 apply → GitHub `WORKER_SCHEDULE_ENABLED=true`. 두 예약이 동시에 켜져도 DB 행 잠금·outbox 임대로 중복 처리는 막히지만 CU 사용량이 늘어난다.
+
 ## 2026-10-08: 예약 지연 조사와 Neon 대체 경로
 
 GitHub schedule 8건은 모두 성공했지만, 2026-10-05 22:09 UTC부터 10월 7일 13:14 UTC까지 실행 간격이 **203~429분**이었다. 최신 실행은 생성 6초 뒤 runner가 시작하고 14초 뒤 종료했다. 따라서 관측된 수 시간 공백은 worker 처리 시간이 아니라 예약 이벤트 생성 단계에 있다. GitHub 내부 지연의 구체 원인까지 확인한 것은 아니다. [공식 지연/누락 안내](https://docs.github.com/en/actions/how-tos/troubleshoot-workflows).
 
 기존 Preview 프로젝트 `twilight-scene-60200159`, 브랜치 `br-dawn-shadow-b3ozdovu`는 Singapore이며 Neon Functions를 사용할 수 있다. `pg_cron`도 설치 가능하지만 DB가 잠들면 실행되지 않으므로 이를 켜는 것으로 해결하지 않는다. [pg_cron 제한](https://neon.com/docs/extensions/pg_cron), [절전 상태에서도 실행되는 Function Trigger](https://neon.com/docs/compute/functions/triggers/schedule).
 
-### 준비된 구현 (아직 원격 활성화 전)
+### 준비된 구현 (당시 기록 — 원격 활성화는 위 장에서 완료)
 
 후속 사용자 ‘진행해줘봐’에 따라 권장한 무료 Preview **15분 간격**을 선택해 `backend/neon.ts`를 `2,17,32,47 * * * *`로 변경했다. 신규 예약은 검증 전까지 비활성이다. 현재 세션은 네트워크 제한·`.git` 읽기 전용으로 바뀌어 CLI 연결/배포와 commit/push를 진행할 수 없다. 권한이 허용되는 세션에서 아래 전환 절차를 재개한다.
 

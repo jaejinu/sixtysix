@@ -16,8 +16,8 @@ export default defineConfig({
       type: 'schedule',
       function: 'sixtysixworker',
       cron: '2,17,32,47 * * * *',
-      // Enable only after checking public-call rejection on the deployed edge.
-      enabled: false,
+      // Enabled 2026-10-22 after plain and forged-header calls returned 403 on the deployed edge.
+      enabled: true,
     },
   },
 });
