@@ -2,20 +2,31 @@
 
 ## 현재 운영 경로 — Neon Function 예약 (2026-10-22 전환 완료)
 
-Preview worker는 **Neon Functions 예약 trigger**가 15분 간격으로 실행한다. GitHub Actions 예약은 `WORKER_SCHEDULE_ENABLED=false`로 중지했고, workflow 자체는 수동 복구용으로 `active` 상태를 유지한다.
+Preview·Production worker 모두 **Neon Functions 예약 trigger**가 15분 간격으로 실행한다. GitHub Actions 예약은 `WORKER_SCHEDULE_ENABLED=false`로 중지했고, workflow 자체는 Preview 수동 복구용으로 `active` 상태를 유지한다.
 
-| 항목 | 값 |
-|---|---|
-| 프로젝트 / 브랜치 | `twilight-scene-60200159` / `br-dawn-shadow-b3ozdovu` (Singapore) |
-| 함수 | `sixtysixworker`, nodejs24, deployment completed |
-| trigger | `sixtysix-preview-tick` (`trigger-1deedb3e-…`), `2,17,32,47 * * * *` UTC, enabled |
-| CLI 프로필 | `sixtysix-preview` (브라우저 OAuth) |
+| 항목 | Preview | Production |
+|---|---|---|
+| 프로젝트 / 브랜치 | `twilight-scene-60200159` / `br-dawn-shadow-b3ozdovu` | `fancy-salad-12582763` / `br-sweet-mouse-az0j2men` |
+| worker 비밀 파일 | `backend/.env.preview-worker` | `backend/.env.production-worker` |
+| trigger | `sixtysix-preview-tick` | `sixtysix-production-tick` |
+
+공통: 함수 `sixtysixworker`(nodejs24), `2,17,32,47 * * * *` UTC, Singapore, CLI 프로필 `sixtysix-preview`(브라우저 OAuth, 같은 Vercel 관리 조직의 두 프로젝트에 모두 접근).
+
+`neon.ts`는 `WORKER_DATABASE_URL`의 역할 이름(`sixtysix_worker_preview`/`_production`)에서 대상을 정한다. 그래서 Production 비밀 파일로 Preview 이름의 trigger를 만들거나 그 반대가 되지 않는다. 새 브랜치 첫 배포는 `NEON_TRIGGER_ENABLED=false`로 예약을 끈 채 올리고 403 확인 뒤 변수 없이 다시 apply한다.
+
+```sh
+cd backend
+# Production 예: 대상 프로젝트·브랜치·비밀 파일을 항상 함께 명시한다
+npx neonctl config plan  --profile sixtysix-preview --project-id fancy-salad-12582763 --branch br-sweet-mouse-az0j2men --config neon.ts --env .env.production-worker
+npx neonctl config apply --profile sixtysix-preview --project-id fancy-salad-12582763 --branch br-sweet-mouse-az0j2men --config neon.ts --env .env.production-worker --no-env-pull
+```
 
 전환 검증 (시각은 UTC):
 
 - `neon config plan`: 함수 1개·trigger 1개 추가만 표시, 그 외 변경 없음. 배포는 `--no-env-pull`로 로컬 비밀 파일을 건드리지 않았다.
 - 배포 직후(예약 꺼짐): `GET` 405, 헤더 없는 `POST` 403, `X-Neon-Trigger-Invocation-Id` 위조 + 정상 envelope `POST` 403(대소문자 두 형태). 예약 활성화 재배포 후 위조 요청 다시 403.
-- 실제 예약 실행 연속 2회 — 실패 0, 예산 초과 없음:
+- Production(2026-10-22 01:39 KST 배포): 같은 순서로 일반 403·위조 403·GET 405, 활성화 재배포 후 위조 403.
+- 실제 예약 실행 연속 2회 — 실패 0, 예산 초과 없음 (Preview):
 
 | scheduledAt | 지연 | 처리 | 시작 판단 | 전달 |
 |---|---|---|---|---|
@@ -34,7 +45,7 @@ npx neonctl logs query --source function --since 2h --sort-order asc \
 
 설정 변경은 `backend/neon.ts`를 고친 뒤 `neon config plan` → `neon config apply --no-env-pull` 순서로 한다. 콘솔이나 `neon triggers enable/disable`로만 바꾸면 다음 apply가 파일 값으로 되돌린다.
 
-**되돌리기:** `neon.ts`의 `enabled: false`로 apply → GitHub `WORKER_SCHEDULE_ENABLED=true`. 두 예약이 동시에 켜져도 DB 행 잠금·outbox 임대로 중복 처리는 막히지만 CU 사용량이 늘어난다.
+**되돌리기:** `NEON_TRIGGER_ENABLED=false`로 apply (Preview) → GitHub `WORKER_SCHEDULE_ENABLED=true`. 두 예약이 동시에 켜져도 DB 행 잠금·outbox 임대로 중복 처리는 막히지만 CU 사용량이 늘어난다.
 
 ## 2026-10-08: 예약 지연 조사와 Neon 대체 경로
 

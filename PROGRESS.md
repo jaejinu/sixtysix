@@ -1,7 +1,7 @@
 # 진행 현황 — 육십육 (SIXTYSIX)
 
 > 무엇을 했고, 무엇을 하는 중이고, 무엇이 남았는가를 한 문서에 모은다.
-> 최종 갱신: 2026-10-22 · Preview worker 예약을 Neon Function 15분 간격으로 전환 (36장)
+> 최종 갱신: 2026-10-22 · Production DB·인증 비밀값·worker 구성, 카카오 키만 남음 (37장)
 >
 > 결정의 근거는 [`v2/V2-SCOPE.md`](v2/V2-SCOPE.md), 작업 방법과 함정은 [`HANDOFF.md`](HANDOFF.md) 에 있다.
 > 이 문서는 **상태**만 다룬다. 충돌하면 V2-SCOPE 를 따른다.
@@ -16,10 +16,11 @@
 | V1 | 완료·동결. 비교 기준 |
 | V2 데모 | localStorage·시뮬레이터 기반 6화면 |
 | V2 실제 계정 | 로그인·계정·모집·본인 활동·알림·운영자 화면과 API 구현 |
-| DB | migration 001~009, 앱·소유자·worker 권한 분리 |
+| DB | migration 001~009, 앱·소유자·worker 권한 분리. Preview·Production 별도 Neon 프로젝트 (37장) |
 | Preview | 카카오 실계정 로그인·운영 모집·참여·인증·면제권·앱 알림 검수 완료. 날짜 전환은 검수 코호트만 조정 (33장) |
-| worker | Neon Function 예약 15분 간격 운영, 연속 2회 지연 ≤1.1초 확인. GitHub 예약은 중지·수동 복구용 유지 (36장) |
-| 다음 | 별도 Production DB·인증·카카오 콜백 구성. 이메일은 도메인 미보유로 보류 |
+| Production | `sixtysix-v2.vercel.app` 에서 DB·공개 API·인증 context 동작. 카카오 로그인만 키 미등록으로 503 (37장) |
+| worker | Preview·Production 모두 Neon Function 예약 15분 간격, 지연 ≤1.5초·실패 0. GitHub 예약은 중지·수동 복구용 유지 (36·37장) |
+| 다음 | 카카오 Production 콜백 등록·키 등록 → 재배포 → 실계정 로그인 검수. 이메일은 도메인 미보유로 보류 |
 
 ### 이번 로컬 점검
 
@@ -49,7 +50,7 @@
 ### 남은 작업
 
 1. ~~worker 예약 실행 지연 점검·스케줄러 확정~~ → Neon Function 15분 예약으로 전환 완료 (36장). Production worker는 Production DB 구성 때 같은 방식으로 따로 만든다.
-2. 별도 Production DB·권한·인증 키·콜백을 구성한 뒤 공개 전 동일 흐름을 확인한다. Preview DB를 Production에 재사용하지 않는다.
+2. Production: DB·권한·인증 비밀값·worker 완료 (37장). 남은 것은 카카오 콜백 등록·`KAKAO_CLIENT_ID/SECRET` Production 등록·재배포·실계정 검수.
 3. 카카오 강제 재인증의 비밀번호 입력 이후 완료 및 동의 취소 경로는 별도 실검수가 남았다. 일반 로그인·로그아웃·세션 복원은 완료했다.
 4. 개발 도구 Vite/Vitest와 관련 의존성 audit 7건의 버전 호환성을 검토한다. 실행 의존성은 0건이다 (30장).
 5. 이메일 발송 도메인과 사진 업로드·타인 피드·남은 화면은 범위에 따라 후속 진행한다.
@@ -738,3 +739,15 @@ Git HEAD는 `d9a89fd`이며 이번 인증 설정/검증 도구/문서와 앱 변
 - GitHub 저장소 변수 `WORKER_SCHEDULE_ENABLED=false`. workflow는 `active`로 두어 수동 실행(복구) 가능.
 - 운영 경로·로그 조회·되돌리기 절차는 [예약 worker 문서](v2/SCHEDULED-WORKER.md) 첫 장. Production DB·데이터는 건드리지 않았다.
 - 다음: 별도 Production DB·권한·인증 키·카카오 콜백 구성 (남은 작업 2).
+
+## 37. Production DB·인증 비밀값·worker 구성 (2026-10-22)
+
+- Neon 조직이 Vercel 관리라 Neon CLI의 프로젝트 생성은 거부됐다(`organization is managed by Vercel`). Vercel Marketplace로 `sixtysix-v2-production`을 만들었다: Neon `fancy-salad-12582763`, 브랜치 `br-sweet-mouse-az0j2men`, Singapore, PG 18, Free, Neon Auth 꺼짐. `--no-connect`로 Vercel 프로젝트에 owner `DATABASE_URL`을 자동 주입하지 않았다.
+- CLI가 같이 설치한 Neon agent skill 파일 변경(`sixtysix-v2/.agents`, `skills-lock.json`, `.claude/`)은 요청 범위 밖이라 되돌렸다.
+- migration 001~009 적용. 역할 `sixtysix_runtime_production`·`sixtysix_worker_production`을 독립 난수 비밀번호로 생성하고 최소 권한 부여. `verify-runtime` 26테이블·13함수 통과, worker 조회 dueCohorts 0.
+- 로컬 비밀 파일(모두 mode 600, Git ignore): `backend/.env.production-admin`(owner 직접 연결), `.env.production-roles`, `.env.production-worker`, `sixtysix-v2/.env.production-runtime`, `.env.production-auth`. 값은 출력·문서화하지 않았다.
+- Vercel `sixtysix-v2` **Production**에 `APP_DATABASE_URL`·`AUTH_CONTEXT_SECRET`·`AUTH_OTP_SECRET`(Secret, Preview와 다른 48바이트 난수), `APP_ORIGIN=https://sixtysix-v2.vercel.app` 등록. 기존 Production 배포(`ebfb554`)를 redeploy해 반영.
+- 공개 주소 확인: `/v1/health`·`/v1/ready`·`/v1/habits`·`/v1/cohorts`·`/v1/auth/context` 200, 비로그인 `/v1/me`·알림·관리자 401, 잘못된 limit 400, 없는 경로 404, 로그아웃 Origin 누락·외부·배포 URL 403, 정상 도메인 204. 카카오 시작은 키 미등록으로 503(예상).
+- `verify-preview-http.cjs`는 배포 URL을 Origin으로 쓰므로 Production에서는 마지막 로그아웃 검사만 403으로 실패한다. APP_ORIGIN이 공개 도메인 하나이기 때문이며, 정상 도메인 Origin으로 204를 수동 확인했다.
+- Production worker: `neon.ts`가 worker 역할 이름에서 대상을 정하도록 바꿨다(Preview trigger 변경 없음 plan 확인). 예약 끈 채 배포 → 일반·위조 헤더 403 → 활성화 → 16:47~17:47 UTC 5회 연속 지연 ≤1.5초·실패 0. Preview도 같은 시간대 계속 정상.
+- 다음 (사용자 계정 작업 필요): 카카오 개발자 콘솔에 `https://sixtysix-v2.vercel.app/v1/auth/kakao/callback` redirect URI 추가 → `KAKAO_CLIENT_ID`·`KAKAO_CLIENT_SECRET`을 Production에 등록(Preview 값은 Vercel에서 읽을 수 없음) → 재배포 → `--kakao-ready` 검사·실계정 로그인 검수. 운영자 지정·첫 모집 개설은 그 뒤.
