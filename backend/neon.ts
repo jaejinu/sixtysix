@@ -15,7 +15,7 @@ export default defineConfig({
     'sixtysix-preview-tick': {
       type: 'schedule',
       function: 'sixtysixworker',
-      cron: '2-57/5 * * * *',
+      cron: '2,17,32,47 * * * *',
       // Enable only after checking public-call rejection on the deployed edge.
       enabled: false,
     },

@@ -8,6 +8,8 @@ GitHub schedule 8건은 모두 성공했지만, 2026-10-05 22:09 UTC부터 10월
 
 ### 준비된 구현 (아직 원격 활성화 전)
 
+후속 사용자 ‘진행해줘봐’에 따라 권장한 무료 Preview **15분 간격**을 선택해 `backend/neon.ts`를 `2,17,32,47 * * * *`로 변경했다. 신규 예약은 검증 전까지 비활성이다. 현재 세션은 네트워크 제한·`.git` 읽기 전용으로 바뀌어 CLI 연결/배포와 commit/push를 진행할 수 없다. 권한이 허용되는 세션에서 아래 전환 절차를 재개한다.
+
 - `backend/functions/scheduled-worker.mjs`: 기존 최소 권한 worker·SQL·outbox 로직을 재사용한다. 자동 주입되는 owner `DATABASE_URL`은 사용하지 않고 `WORKER_DATABASE_URL`만 허용한다. DB grant 검사·배치 20개·90초 처리 예산을 유지한다.
 - `scheduled-handler.mjs`: Neon edge가 외부 입력에서 제거하는 `X-Neon-Trigger-Invocation-Id`를 검증한다. **다른 호스팅에 그대로 배포하면 안 된다.** POST/경로/예약 envelope 검증, 겹치는 실행 재시도, 실패 시 503, 비밀값 없는 지연·처리시간 로그를 제공한다. [플랫폼의 헤더 보증](https://neon.com/docs/compute/functions/triggers/overview#confirming-a-request-came-from-neon).
 - `backend/neon.ts`: 함수·예약을 선언하며 최초 상태는 `enabled: false`다. 타 서비스·DB 설정을 선언하지 않는다. 신규 원격 함수의 일반 요청과 위조 헤더 요청이 모두 403인지 확인한 뒤 활성화한다.
